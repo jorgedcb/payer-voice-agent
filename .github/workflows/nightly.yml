@@ -1,0 +1,64 @@
+name: Nightly pass rates
+# A single run of a model-behavior test is a coin with a bias, not a verdict.
+# This runs every suite several times and reports a pass rate per test, so a
+# scenario that slipped from 100% to 80% shows up here even when each PR run
+# happened to pass, and a change in the model behind LiveKit inference shows
+# up without anyone touching the code. Quarantined tests (known flaky) are
+# measured too, informational only.
+on:
+  schedule:
+    - cron: "37 8 * * *"
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Repetitions per test
+        default: "5"
+
+jobs:
+  pass-rates:
+    name: Pass rates
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+      RUNS: ${{ github.event.inputs.runs || '5' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv sync --locked
+      - name: Run the live suites RUNS times
+        # Only the inference-backed tests (marker `live`): the offline ones are
+        # deterministic and already gated per PR. Each pytest is bounded so one
+        # hung inference call costs one repetition, not the night.
+        run: |
+          mkdir -p reports/main reports/quarantine
+          for i in $(seq 1 "$RUNS"); do
+            timeout 15m uv run --no-sync pytest test/ -q --tb=line -m "live and not quarantine" \
+              --junitxml="reports/main/run$i.xml" || true
+            timeout 5m uv run --no-sync pytest test/ -q --tb=line -m "live and quarantine" \
+              --junitxml="reports/quarantine/run$i.xml" || true
+          done
+      - name: Pass rates
+        # Quarantined tests never fail the run, but a floor of 50% still marks
+        # them red in the summary so a known flake turning into a hard failure
+        # is visible without opening the logs.
+        run: |
+          {
+            echo "## Voice agent pass rates ($RUNS runs)"
+            uv run --no-sync python src/pass_rates.py reports/main/*.xml --min 0.9 \
+              || echo "FAILED=1" >> "$GITHUB_ENV"
+            echo
+            echo "### Quarantined (informational, floor 50%)"
+            uv run --no-sync python src/pass_rates.py reports/quarantine/*.xml --min 0.5 || true
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Fail when a test is under the threshold
+        if: env.FAILED == '1'
+        run: |
+          echo "A test passed less than 90% of its runs; see the job summary"
+          exit 1

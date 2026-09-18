@@ -1,0 +1,26 @@
+{
+  "payer_phone_number": "+12025550100",
+  "npi": "0000000000",
+  "npi_type": "facility",
+  "tax_id": "00-0000000",
+  "facility_name": "Sample Therapy Center",
+  "facility_address": "123 Sample Street, Austin, Texas, 78701",
+  "callback_number": "+12025550101",
+  "caller_first_name": "Jordan",
+  "caller_last_initial": "C",
+  "member_id": "W123456789",
+  "member_name": "Sample Member",
+  "member_dob": "1990-01-01",
+  "cpt_codes": [
+    "97110",
+    "97112"
+  ],
+  "dx_code": "",
+  "service_locations": [
+    "office",
+    "home"
+  ],
+  "service_type": "physical_therapy",
+  "ask_visit_limits": true,
+  "ask_mnr": true
+}

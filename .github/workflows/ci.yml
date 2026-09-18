@@ -1,0 +1,69 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run --no-sync ruff check src/ test/
+      # deptry: declared-vs-imported check; exemptions and their reasons live in pyproject [tool.deptry].
+      - run: uv run --no-sync deptry .
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run --no-sync mypy src/
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run --no-sync pytest test/ --offline -q --tb=short -m "not quarantine"
+  live-tests:
+    # The prompt-behavior suites (marker `live`, set by conftest on every test
+    # that uses a model fixture) call LiveKit inference and need the
+    # LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET repository secrets.
+    # Fork PRs do not receive them and are skipped. Model nondeterminism is
+    # handled two ways: a failed test is rerun once on its own before the job
+    # is red, and a known flake is quarantined (pytest -m quarantine) and
+    # measured by the nightly workflow instead.
+    if: ${{ !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Run, then rerun only what failed
+        run: |
+          uv run --no-sync pytest test/ -q --tb=short -m "live and not quarantine" \
+            || uv run --no-sync pytest test/ -q --tb=short -m "live and not quarantine" --last-failed --last-failed-no-failures=none

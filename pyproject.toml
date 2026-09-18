@@ -1,0 +1,56 @@
+[project]
+name = "livekit-voice-agent"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "boto3>=1.43.91",
+    "botocore>=1.43.91",
+    "jinja2>=3.1.6",
+    "livekit-agents[elevenlabs,silero,turn-detector]>=1.8.0",
+    "livekit-plugins-noise-cancellation>=0.3.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.44.0",
+    "opentelemetry-sdk>=1.44.0",
+    "protobuf>=7.36.1",
+    "pydantic>=2.13.5",
+    "python-dotenv>=1.2.3",
+]
+
+[dependency-groups]
+dev = [
+    "deptry>=0.23.0",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.6",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["test"]
+asyncio_mode = "auto"
+# Capability probes measure what a model does at a turn where the right answer
+# is undecided. test/conftest.py skips them unless asked for by marker:
+#   LK_NAVIGATOR_TEST_MODEL=<model> uv run pytest -m capability
+markers = [
+    "capability: probes a model's judgment; a pass or fail is a measurement, not a bug",
+    "quarantine: known flaky; excluded from the PR gate, measured by the nightly pass-rate run",
+    "live: calls LiveKit inference; set by conftest on every test that uses a model fixture",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+
+[tool.deptry]
+known_first_party = ["agent", "call_reference", "dispatch", "interview", "navigator", "pass_rates", "prompts", "recording", "report", "calls", "test_navigator"]
+# Tests are scanned too; pytest is only imported there.
+exclude = ["venv", "\\.venv", "\\.git"]
+
+[tool.deptry.per_rule_ignores]
+DEP004 = ["pytest"]
