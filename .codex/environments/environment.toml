@@ -2,7 +2,30 @@ version = 1
 name = "Payer voice agent"
 
 [setup]
-script = "uv sync --locked"
+script = '''
+set -eu
+
+# Only change the starting point of linked worktrees, never the main checkout.
+if [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ]; then
+  if git symbolic-ref -q HEAD >/dev/null; then
+    echo "Setup stopped: expected a detached worktree; an existing branch will not be moved." >&2
+    exit 1
+  fi
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "Setup stopped: commit or stash worktree changes before running setup." >&2
+    exit 1
+  fi
+
+  git fetch origin +refs/heads/main:refs/remotes/origin/main
+  if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+    echo "Setup stopped: this worktree has commits outside origin/main." >&2
+    exit 1
+  fi
+  git -c advice.detachedHead=false switch --detach --no-overwrite-ignore refs/remotes/origin/main
+fi
+
+uv sync --locked
+'''
 
 [[actions]]
 name = "Offline tests"
