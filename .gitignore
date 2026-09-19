@@ -9,3 +9,5 @@ venv/
 .pytest_cache/
 .ruff_cache/
 reports/
+# ONNX Runtime session artifact
+/:memory:.ses

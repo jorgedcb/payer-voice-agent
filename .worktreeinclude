@@ -1,0 +1,4 @@
+# Copy local configuration into new Codex-managed worktrees.
+# These files remain ignored by Git; no credential values belong in this file.
+.env
+livekit.toml

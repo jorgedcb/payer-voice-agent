@@ -1,0 +1,20 @@
+version = 1
+name = "Payer voice agent"
+
+[setup]
+script = "uv sync --locked"
+
+[[actions]]
+name = "Offline tests"
+icon = "test"
+command = 'uv run pytest --offline -m "not quarantine"'
+
+[[actions]]
+name = "Regression tests"
+icon = "test"
+command = 'uv run pytest -m "not quarantine"'
+
+[[actions]]
+name = "Deploy configured agent"
+icon = "run"
+command = "lk agent deploy"
