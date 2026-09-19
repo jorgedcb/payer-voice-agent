@@ -72,6 +72,19 @@ class InterviewAgent(Agent):
     def call_date(self) -> date:
         return self._call_date
 
+    @function_tool()
+    async def wait(self) -> None:
+        """Say nothing this turn when the line needs no reply from you.
+
+        Choose silence when the representative needs time to look up information,
+        type, finish speaking, or complete a hold or transfer. A brief spoken
+        acknowledgment is also valid when appropriate, with or without this tool.
+        Do not narrate the silence.
+        Questions, permission requests (including extending a hold), and
+        presence checks need spoken answers, even during a wait. Resume
+        verification when the representative is ready.
+        """
+
     @function_tool(name="end_call", description=END_CALL_DESCRIPTION)
     async def end_call(self, ctx: RunContext) -> Any:
         if self._call_reference is None:

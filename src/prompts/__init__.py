@@ -12,9 +12,7 @@ from jinja2 import Environment, StrictUndefined
 from .formatting import nato_spell, speak_code, speak_cpt_codes, speak_digits, speak_npi, speak_phone, speak_places, speak_tax_id, service_label
 
 END_CALL_DESCRIPTION = (
-    "End the call. Call it once the closing question is answered, or when the "
-    "representative says the call cannot continue, including a refusal to deal "
-    "with an AI. It says goodbye for you."
+    "Collect the call reference or confirm none is available, then say goodbye and disconnect."
 )
 DISCLOSURE = (
     "Answer identity questions according to what they ask:\n"
@@ -51,7 +49,7 @@ _env.filters.update(
     speak_places=speak_places,
     service_label=service_label,
 )
-_env.globals.update(end_call_description=END_CALL_DESCRIPTION, disclosure=DISCLOSURE)
+_env.globals.update(disclosure=DISCLOSURE)
 
 
 # Names the templates receive on top of the spec's own fields. A CallSpec field

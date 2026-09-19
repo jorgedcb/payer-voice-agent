@@ -187,9 +187,11 @@ async def test_end_call_does_not_shut_down_if_collection_fails() -> None:
     assert agent.call_reference is None
 
 
-def test_interview_exposes_only_end_call() -> None:
+def test_interview_exposes_wait_and_gated_end_call() -> None:
     agent = InterviewAgent(spec=load_sample_spec())
-    assert {tool.info.name for tool in agent.tools} == {"end_call"}
+    # Reference collection still belongs to the closing task; the interview
+    # can either wait or enter closing through its guarded end_call.
+    assert {tool.info.name for tool in agent.tools} == {"wait", "end_call"}
 
 
 async def test_task_gets_the_interview_call_date() -> None:

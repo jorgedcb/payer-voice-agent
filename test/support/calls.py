@@ -15,6 +15,26 @@ def called(result, name: str) -> bool:
     return any(ev.type == "function_call" and ev.item.name == name for ev in result.events)
 
 
+async def assert_yields_turn(result, judge, *, after: str) -> None:
+    """Accept silence or a brief acknowledgment without advancing or closing."""
+    assert not called(result, "end_call"), "Waiting must not start closing."
+    # A model may say something, call wait, do both, or produce no speech.
+    # Check every spoken message rather than pinning a tool choice or wording.
+    for index, event in enumerate(result.events):
+        if event.type == "message" and event.item.role == "assistant" and event.item.text_content:
+            await result.expect[index].is_message(role="assistant").judge(
+                judge,
+                intent=(
+                    f"The representative just said {after!r}. In this context, the reply is "
+                    "A brief conversational acknowledgment or courtesy that gives the "
+                    "representative time to continue. A word or a short sentence is valid; "
+                    "no particular wording is required. Does not ask a question, request "
+                    "a call reference, start a new topic, claim verification is complete, "
+                    "announce disconnection, or narrate stage directions."
+                ),
+            )
+
+
 def handoff_opening(result) -> str:
     """The opening the navigator wrote into its handoff call.
 

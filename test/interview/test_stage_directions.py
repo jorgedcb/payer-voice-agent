@@ -43,10 +43,9 @@ async def test_does_not_narrate_when_there_is_nothing_to_say(session, start_assi
 
     result = await session.run(user_input=TRIGGER)
 
-    # Navigate with the framework; assert with a regex. Whether a reply is a
-    # parenthetical stage direction is syntax, not intent, so judge() would add
-    # an LLM call, its own flake, and its own opinion to a yes/no question.
-    message = result.expect.next_event().is_message(role="assistant")
-    text = message.event().item.text_content or ""
-
-    assert not STAGE_DIRECTION.search(text), f"agent narrated instead of speaking: {text!r}"
+    # Waiting silently is valid too. Inspect every spoken message, if any:
+    # a parenthetical stage direction must never be sent to TTS.
+    for event in result.events:
+        if event.type == "message" and event.item.role == "assistant":
+            text = event.item.text_content or ""
+            assert not STAGE_DIRECTION.search(text), f"agent narrated instead of speaking: {text!r}"
