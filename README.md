@@ -129,6 +129,33 @@ each operator has their own.
 | `ELEVEN_API_KEY` | Primary voice. |
 | `LANGFUSE_*` | Optional tracing. Only the HIPAA region is accepted. |
 
+## Log forwarding
+
+The agent uses Python logging. Choose where to collect its runtime logs in your
+deployment configuration; no logging-provider SDK is required in the agent.
+
+For agents deployed on **LiveKit Cloud**, [log drains](https://docs.livekit.io/deploy/agents/log-drains/)
+forward stdout and stderr through a separate sidecar. Configure the destination
+with deployment secrets. For example, to send logs to Sentry, run this from the
+directory containing the target deployment's `livekit.toml`:
+
+```bash
+lk agent update-secrets --secrets "SENTRY_DSN=your-sentry-dsn"
+```
+
+Updating secrets restarts the deployed agent.
+
+LiveKit Cloud also supports CloudWatch, Datadog, New Relic, Splunk, Google Cloud,
+and syslog destinations; see the log-drain guide for each provider's secrets and
+permissions. For **self-hosted agents**, configure your hosting platform or log
+collector to route stdout and stderr to your preferred service. Setting
+`SENTRY_DSN` alone does not enable forwarding outside LiveKit Cloud.
+
+Log drains forward what the process writes. Keep patient data, transcripts,
+credentials, and sensitive exception details out of runtime logs, and review
+the chosen destination before enabling forwarding for clinical calls. These
+drains are separate from the optional Langfuse tracing configured above.
+
 ## Status and license
 
 This is the code as it runs in production at [Solum](https://getsolum.com),
