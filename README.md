@@ -158,5 +158,8 @@ drains are separate from the optional Langfuse tracing configured above.
 
 ## Status and license
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and pull request
+checks, and [SECURITY.md](SECURITY.md) to report vulnerabilities privately.
+
 This is the code as it runs in production at [Solum](https://getsolum.com),
 published with the company's permission. MIT licensed; see `LICENSE`.
