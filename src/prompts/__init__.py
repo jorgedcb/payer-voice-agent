@@ -1,19 +1,28 @@
 """The agent's authored language, loaded like application templates."""
 
 from datetime import date, datetime
-from typing import Literal
-from zoneinfo import ZoneInfo
 from functools import cache
 from importlib.resources import files
-from dispatch import CallSpec
+from typing import Literal
+from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, StrictUndefined
 
-from .formatting import nato_spell, speak_code, speak_cpt_codes, speak_digits, speak_npi, speak_phone, speak_places, speak_tax_id, service_label
+from dispatch import CallSpec
 
-END_CALL_DESCRIPTION = (
-    "Collect the call reference or confirm none is available, then say goodbye and disconnect."
+from .formatting import (
+    nato_spell,
+    service_label,
+    speak_code,
+    speak_cpt_codes,
+    speak_digits,
+    speak_npi,
+    speak_phone,
+    speak_places,
+    speak_tax_id,
 )
+
+END_CALL_DESCRIPTION = "Collect the call reference or confirm none is available, then say goodbye and disconnect."
 DISCLOSURE = (
     "Answer identity questions according to what they ask:\n"
     "- A live-representative check, with no mention of being human or automated: "

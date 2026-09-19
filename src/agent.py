@@ -1,5 +1,4 @@
 import asyncio
-import base64
 import logging
 from os import getenv
 
@@ -13,26 +12,25 @@ from livekit.agents import (
     JobContext,
     STTContextOptions,
     TurnHandlingOptions,
+    inference,
+    llm,
     room_io,
+    stt,
+    tts,
 )
-from livekit.plugins import elevenlabs, noise_cancellation, silero
-from livekit.agents import llm, stt, tts, inference
-from livekit.agents.telemetry import set_tracer_provider
-from opentelemetry import context as otel_context
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import Span, SpanProcessor, TracerProvider
-from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+from livekit.plugins import noise_cancellation, silero
 
 import call_reference
 import interview
 import navigator
 import prompts
-from navigator import NavigatorAgent
-from dispatch import load_sample_spec, parse_dispatch
 import report
-from report import on_session_end as save_session_report
+from dispatch import load_sample_spec, parse_dispatch
+from navigator import NavigatorAgent
 from recording import start_recording
-
+from report import on_session_end as save_session_report
+from tracing import setup_langfuse
+from voices import tts_chain
 
 logger = logging.getLogger(__name__)
 
@@ -45,75 +43,6 @@ FALLBACK_LLM = "google/gemma-4-31b-it"
 # name the same participant.
 PAYER_IDENTITY = "payer"
 RINGING_TIMEOUT_S = 45
-
-
-class _SessionIdSpanProcessor(SpanProcessor):
-    """Stamp ``langfuse.session.id`` on every span so Langfuse groups the call by it.
-
-    ``set_tracer_provider(metadata=...)`` cannot do this: inside a job LiveKit's own
-    metadata processor stamps its job attributes and returns without applying the
-    caller's metadata, so Langfuse fell back to ``gen_ai.conversation.id`` -- the
-    room SID -- and the call was unsearchable by its ``vc-`` id.
-    """
-
-    def __init__(self, session_id: str) -> None:
-        self._session_id = session_id
-
-    def on_start(self, span: Span, parent_context: otel_context.Context | None = None) -> None:
-        span.set_attribute("langfuse.session.id", self._session_id)
-
-
-def _setup_langfuse(session_id: str) -> TracerProvider | None:
-    """Route this session's OpenTelemetry spans to Langfuse.
-
-    ``session_id`` (the room name) becomes the Langfuse session for every span, so
-    a call can be found by its ``vc-`` id. Returns None when the keys aren't
-    configured, so console mode and local runs behave exactly as before -- tracing
-    stays inert until the secrets exist.
-
-    Note what these spans carry: lk.pii.instructions is the fully rendered prompt
-    (member name, DOB, member ID, NPI) and lk.pii.user_transcript is everything
-    the representative said. LiveKit's PII redaction covers its own storage, not
-    traces exported from here. Only the approved HIPAA destination is accepted;
-    the operator must keep its BAA in force before enabling the keys.
-    """
-    public_key = getenv("LANGFUSE_PUBLIC_KEY")
-    secret_key = getenv("LANGFUSE_SECRET_KEY")
-    base_url = getenv("LANGFUSE_BASE_URL")
-    if not (public_key and secret_key and base_url):
-        logger.info("Langfuse not configured; tracing disabled for this session")
-        return None
-
-    if base_url.rstrip("/") != "https://hipaa.cloud.langfuse.com":
-        logger.warning("Tracing disabled: destination is not approved for clinical data")
-        return None
-
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-    auth = base64.b64encode(f"{public_key}:{secret_key}".encode()).decode()
-    # Explicit arguments prevent ambient OTEL trace settings from redirecting PHI.
-    exporter = OTLPSpanExporter(
-        endpoint="https://hipaa.cloud.langfuse.com/api/public/otel/v1/traces",
-        headers={"Authorization": f"Basic {auth}", "x-langfuse-ingestion-version": "4"},
-    )
-    if not session_id:
-        logger.warning("Tracing session id is empty; spans will not group by call")
-    # Explicit sampler and resource for the same reason as the exporter: ambient
-    # OTEL_TRACES_SAMPLER / OTEL_RESOURCE_ATTRIBUTES must not silently drop or
-    # relabel clinical spans. Resource() -- not Resource.create() -- reads no env.
-    provider = TracerProvider(
-        sampler=ALWAYS_ON, resource=Resource({SERVICE_NAME: TRACING_SERVICE_NAME})
-    )
-    if session_id:
-        provider.add_span_processor(_SessionIdSpanProcessor(session_id))
-    provider.add_span_processor(BatchSpanProcessor(exporter))
-    # Any non-empty metadata makes LiveKit install its own processor, which stamps
-    # room_id, job_id and agent name on every span inside a job. Outside a job it
-    # stamps this dict instead, so the session id is the right fallback content.
-    set_tracer_provider(provider, metadata={"langfuse.session.id": session_id})
-    logger.info("Clinical tracing enabled at approved destination")
-    return provider
 
 
 # override=True so this project's config file wins over ambient shell exports.
@@ -129,11 +58,6 @@ load_dotenv(override=True)
 VOICE_CALL_AGENT_NAME = getenv("VOICE_CALL_AGENT_NAME", "voice-agent").strip()
 if not VOICE_CALL_AGENT_NAME:
     raise RuntimeError("VOICE_CALL_AGENT_NAME must not be blank for the worker")
-# The OTel service.name stamped on every trace. Read here, not from
-# OTEL_SERVICE_NAME, for the same reason _setup_langfuse ignores ambient OTEL_*
-# settings: nothing outside this file may relabel or redirect clinical spans.
-TRACING_SERVICE_NAME = getenv("TRACING_SERVICE_NAME", "voice-agent").strip() or "voice-agent"
-
 # Give report serialization and the S3 SDK retries their own session-end budget.
 server = AgentServer(session_end_timeout=60, shutdown_process_timeout=60)
 
@@ -148,59 +72,6 @@ async def on_session_end(ctx: JobContext) -> None:
         except Exception:
             logger.error("Call room cleanup failed; continuing with session report")
     await save_session_report(ctx)
-
-
-# The voice Jorge picked by ear for the ElevenLabs switch.
-DEFAULT_TTS_VOICE_ID = "QTKSa2Iyv0yoxvXY2V8a"
-# eleven_flash_v2_5 is ElevenLabs' low-latency model (~75ms), on the standard
-# streaming websocket. It does not normalize numbers on its own, so the prompt
-# spells every identifier out as words (prompts/verification.md, SPEECH DELIVERY).
-# eleven_v3_conversational was tried first and dropped: it runs on the newer
-# text-to-dialogue path and did not hold up on calls.
-TTS_MODEL = "eleven_flash_v2_5"
-
-# Pinned, not inherited. Without these the plugin opens the websocket with an
-# empty voice_settings object, and whether ElevenLabs then applies the voice's
-# stored settings or its platform defaults is undocumented; the playground with
-# settings unset applies the stored ones, so the two never sounded alike. These
-# are the stored settings for the default voice with stability raised from
-# 0.55: the read on calls came out excited on short sentences ("Certainly."),
-# and stability is ElevenLabs' lever for that. Set the same values in the
-# playground to reproduce a call.
-TTS_VOICE_SETTINGS = elevenlabs.VoiceSettings(
-    stability=0.7, similarity_boost=0.4, style=0.0, speed=1.02, use_speaker_boost=True
-)
-
-
-def _tts_chain(voice_id: str | None = None) -> list[tts.TTS]:
-    """The TTS fallback chain, primary first.
-
-    ElevenLabs left LiveKit Inference, so it runs on our own account and its
-    constructor raises when ELEVEN_API_KEY is missing. That raise lands inside
-    the job, before the session exists: it would fail every dispatched call
-    without a word spoken, and the two fallbacks behind it -- the reason this is
-    a chain at all -- would never be reached. A missing key drops the voice and
-    says so in the log instead.
-
-    ElevenLabs is not covered by LiveKit's HIPAA BAA; the two behind it are, on
-    other vendors.
-    """
-    chain: list[tts.TTS] = []
-    if getenv("ELEVEN_API_KEY"):
-        chain.append(
-            elevenlabs.TTS(
-                model=TTS_MODEL,
-                voice_id=voice_id or DEFAULT_TTS_VOICE_ID,
-                voice_settings=TTS_VOICE_SETTINGS,
-            )
-        )
-    else:
-        logger.error("ELEVEN_API_KEY is not set; the call runs on the xAI voice instead")
-    chain.append(inference.TTS.from_model_string("xai/tts-1:carina"))
-    chain.append(
-        inference.TTS.from_model_string("cartesia/sonic-3:9626c31c-bec5-4cca-baa8-f8ba9e84c8bc")
-    )
-    return chain
 
 
 # The entrypoint function runs when a participant joins the room
@@ -222,7 +93,7 @@ async def entrypoint(ctx: JobContext):
     # Set up before the session starts, so the pipeline's spans are routed. The room
     # name doubles as the Langfuse session id, grouping every span from this call.
     # Production rooms are the call id (vc-<uuid>); the Colab notebook dials ttfa-*.
-    trace_provider = _setup_langfuse(session_id=ctx.room.name)
+    trace_provider = setup_langfuse(session_id=ctx.room.name)
     if trace_provider is not None:
 
         async def flush_traces():
@@ -261,8 +132,8 @@ async def entrypoint(ctx: JobContext):
             ]
         ),
         # TTS with fallback: ElevenLabs primary, then xAI, then Cartesia. See
-        # _tts_chain for why the primary is built there and not inline.
-        tts=tts.FallbackAdapter(_tts_chain(spec.tts_voice_id)),
+        # tts_chain for why the primary is built there and not inline.
+        tts=tts.FallbackAdapter(tts_chain(spec.tts_voice_id)),
         # Words the recognizer would otherwise guess at. On a live call the menu
         # read back the patient "Rashid" and STT heard "Richard Amari", so the
         # navigator denied its own authentication. Session-owned, so it survives
@@ -391,7 +262,9 @@ async def dial(ctx: JobContext, payer_phone: str) -> bool:
         # Only documented protocol codes; never log the provider's message/metadata.
         # https://docs.livekit.io/reference/python/livekit/api/twirp_client.html
         sip = exc.sip_status_code if isinstance(exc, api.SipCallError) else None
-        allowed = {value for name, value in vars(api.ServerErrorCode).items() if name.isupper()}
+        allowed = {
+            value for name, value in vars(api.ServerErrorCode).items() if name.isupper()
+        }
         code = exc.code if exc.code in allowed else "unknown"
         if sip is not None and 100 <= sip <= 699:
             code = f"sip_{sip}"

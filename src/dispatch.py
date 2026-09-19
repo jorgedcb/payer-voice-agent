@@ -3,11 +3,13 @@
 Accepts the backend VoiceCallSpec fields used for payer calls. The backend owns
 service and network policy; the worker only renders its resolved snapshot.
 """
+
 import re
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 
 class CallSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
@@ -22,7 +24,7 @@ class CallSpec(BaseModel):
     caller_first_name: str
     caller_last_initial: str | None = None
     # ElevenLabs voice for this call, picked when it was triggered. None uses the
-    # worker's own default (see agent._tts_chain).
+    # worker's own default (see voices.tts_chain).
     tts_voice_id: str | None = None
     member_id: str
     member_name: str
@@ -32,8 +34,11 @@ class CallSpec(BaseModel):
     dx_code: str
     service_locations: list[str] = Field(default_factory=list)
     service_type: Literal[
-        "mental_health", "mental_health_provider_outpatient", "physical_therapy",
-        "occupational_therapy", "speech_therapy",
+        "mental_health",
+        "mental_health_provider_outpatient",
+        "physical_therapy",
+        "occupational_therapy",
+        "speech_therapy",
     ]
     ask_visit_limits: bool
     ask_mnr: bool
@@ -47,31 +52,6 @@ class CallSpec(BaseModel):
     network_benefit_scope: Literal[
         "both_networks", "provider_network", "in_network_only"
     ] = "both_networks"
-
-    @model_validator(mode="before")
-    @classmethod
-    def _accept_retired_network_flags(cls, data: object) -> object:
-        """Widening step for the two-flag -> scope rename (the worker and the
-        backend deploy independently, so a job dispatched by the previous
-        backend version can still arrive here). The retired keys are translated and removed;
-        an explicit scope wins. Narrow this away once no job on the old shape
-        can be in flight."""
-        if not isinstance(data, dict):
-            return data
-        legacy = {"require_both_network_benefits", "collect_oon_benefits"}
-        if not legacy & data.keys():
-            return data
-        data = dict(data)
-        both = data.pop("require_both_network_benefits", True)
-        collect_oon = data.pop("collect_oon_benefits", True)
-        if "network_benefit_scope" not in data:
-            if collect_oon is False:
-                data["network_benefit_scope"] = "in_network_only"
-            elif both is False:
-                data["network_benefit_scope"] = "provider_network"
-            else:
-                data["network_benefit_scope"] = "both_networks"
-        return data
 
     @field_validator("caller_last_initial")
     @classmethod

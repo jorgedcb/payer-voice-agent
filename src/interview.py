@@ -107,7 +107,9 @@ class InterviewAgent(Agent):
         return await CallReferenceTask(
             self._spec,
             call_date=self._call_date,
-            chat_ctx=self.chat_ctx.copy(exclude_function_call=True, exclude_instructions=True),
+            chat_ctx=self.chat_ctx.copy(
+                exclude_function_call=True, exclude_instructions=True
+            ),
         )
 
     @staticmethod
@@ -131,6 +133,8 @@ class InterviewAgent(Agent):
         # directly (tests, the console), where the other side speaks first and the
         # normal turn loop answers them. A handoff that somehow brings no opening
         # is that same silence, and the rep's next words start an ordinary turn.
-        logger.info("Interview entered; opening written at handoff: %s", bool(self._opening))
+        logger.info(
+            "Interview entered; opening written at handoff: %s", bool(self._opening)
+        )
         if self._opening:
             self.session.say(self._opening, add_to_chat_ctx=True)

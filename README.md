@@ -43,10 +43,11 @@ deciding what to do with them.
   inherits the navigator's chat history so the representative is never asked
   to repeat themselves.
 - **Every model has a fallback**, and so does the voice. LLM, STT and TTS each
-  run behind a `FallbackAdapter` (`src/agent.py`).
+  run behind a `FallbackAdapter` (`src/agent.py`); voice settings and the TTS
+  chain live in `src/voices.py`.
 - **Tracing only ships to an approved destination.** The worker refuses to
   export spans anywhere but the HIPAA region of Langfuse, and reads none of the
-  ambient `OTEL_*` variables that could redirect or relabel them.
+  ambient `OTEL_*` variables that could redirect or relabel them (`src/tracing.py`).
 - **The agent discloses that it is automated** when asked, and never claims to
   be a person or a named employee (`src/prompts/__init__.py`). It answers a
   "live representative" check with just "Yes."; explicit questions about being

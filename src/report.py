@@ -39,18 +39,23 @@ def mark_answered(ctx: JobContext) -> None:
 def _upload_report(bucket: str, key: str, body: bytes) -> None:
     endpoint = getenv("S3_ENDPOINT_URL") or None
     # Use the SDK credential chain and retry policy, without a second retry loop.
-    with closing(boto3.client(
-        "s3",
-        endpoint_url=endpoint,
-        config=Config(
-            s3={"addressing_style": "path" if endpoint else "auto"},
-            connect_timeout=3,
-            read_timeout=5,
-            retries={"mode": "standard", "total_max_attempts": 3},
-        ),
-    )) as client:
+    with closing(
+        boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            config=Config(
+                s3={"addressing_style": "path" if endpoint else "auto"},
+                connect_timeout=3,
+                read_timeout=5,
+                retries={"mode": "standard", "total_max_attempts": 3},
+            ),
+        )
+    ) as client:
         client.put_object(
-            Bucket=bucket, Key=key, Body=body, ContentType="application/json",
+            Bucket=bucket,
+            Key=key,
+            Body=body,
+            ContentType="application/json",
         )
 
 

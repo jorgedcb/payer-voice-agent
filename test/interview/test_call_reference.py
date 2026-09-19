@@ -37,7 +37,9 @@ def tool_names(task: CallReferenceTask) -> set[str]:
 async def test_confirm_tool_appears_only_after_a_value_is_recorded() -> None:
     task = make_task()
     assert tool_names(task) == {
-        "update_representative_name", "update_call_reference", "no_reference_available"
+        "update_representative_name",
+        "update_call_reference",
+        "no_reference_available",
     }
 
     reply = await task.update_call_reference("AB73921")
@@ -45,7 +47,10 @@ async def test_confirm_tool_appears_only_after_a_value_is_recorded() -> None:
     assert task.current_reference == "AB73921"
     assert "confirm_call_reference" in tool_names(task)
     # Spelled for the model to copy: on its own it read "A, B, 7, 3, 9, 2, 1".
-    assert "The reference I have is A as in alpha, B as in bravo, seven, three, nine, two, one. Is that correct?" in reply
+    assert (
+        "The reference I have is A as in alpha, B as in bravo, seven, three, nine, two, one. Is that correct?"
+        in reply
+    )
     assert not task.done()
 
 
@@ -145,7 +150,9 @@ async def test_empty_reference_is_refused() -> None:
 
 async def test_no_reference_completes_with_the_statement() -> None:
     task = make_task()
-    await task.no_reference_available("We do not issue reference numbers for eligibility calls.")
+    await task.no_reference_available(
+        "We do not issue reference numbers for eligibility calls."
+    )
     assert result(task) == CallReferenceResult(
         reference=None,
         unavailable_statement="We do not issue reference numbers for eligibility calls.",
@@ -178,7 +185,9 @@ async def test_end_call_does_not_shut_down_if_collection_fails() -> None:
     agent._end_call_tool._end_call = shutdown
     with (
         patch.object(
-            InterviewAgent, "_collect_call_reference", side_effect=ToolError("cancelled")
+            InterviewAgent,
+            "_collect_call_reference",
+            side_effect=ToolError("cancelled"),
         ),
         pytest.raises(ToolError),
     ):
@@ -215,7 +224,9 @@ async def test_second_end_call_while_closing_is_refused() -> None:
             await agent.end_call(MagicMock())
         return CallReferenceResult(reference="AB73921")
 
-    with patch.object(InterviewAgent, "_collect_call_reference", side_effect=slow_collect):
+    with patch.object(
+        InterviewAgent, "_collect_call_reference", side_effect=slow_collect
+    ):
         assert await agent.end_call(MagicMock()) == "bye"
     started.assert_called_once()
 

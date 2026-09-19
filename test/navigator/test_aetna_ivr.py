@@ -9,7 +9,6 @@ import json
 
 from support.calls import AETNA_PATIENT, called, show_response
 
-
 AETNA_IVR_INSTRUCTIONS = (
     "If the member ID starts with W, enter only the numeric portion when using the keypad. "
     "At the initial fax-only offer, stay silent so the IVR continues. "
@@ -20,7 +19,9 @@ AETNA_IVR_INSTRUCTIONS = (
 )
 
 
-async def test_aetna_ivr_route_with_custom_instructions(session, start_navigator) -> None:
+async def test_aetna_ivr_route_with_custom_instructions(
+    session, start_navigator
+) -> None:
     await start_navigator(**AETNA_PATIENT, ivr_instructions=AETNA_IVR_INSTRUCTIONS)
 
     # None means silence; a string means exactly those keypad digits. Expected
@@ -119,21 +120,26 @@ async def test_aetna_ivr_route_with_custom_instructions(session, start_navigator
             f"left the menu while it was still asking; IVR: {user_input}"
         )
         assert not any(
-            event.type == "message" and event.item.role == "assistant"
+            event.type == "message"
+            and event.item.role == "assistant"
             and event.item.text_content
             for event in result.events
         ), "navigator spoke during the IVR route"
         tool_calls = [
             (event.item.name, json.loads(event.item.arguments))
-            for event in result.events if event.type == "function_call"
+            for event in result.events
+            if event.type == "function_call"
         ]
         expected = (
-            [("wait", {})] if keys is None
+            [("wait", {})]
+            if keys is None
             else [("send_dtmf_events", {"events": list(keys)})]
         )
         # DTMF returns a tool result, so the model may follow it with wait.
         allowed = [expected] if keys is None else [expected, expected + [("wait", {})]]
-        assert tool_calls in allowed, f"IVR: {user_input}\nExpected: {expected}\nGot: {tool_calls}"
+        assert tool_calls in allowed, (
+            f"IVR: {user_input}\nExpected: {expected}\nGot: {tool_calls}"
+        )
 
     # The supplied recording ends outside business hours. That is an exit,
     # not a representative greeting, even though its UI labeled it as one.
@@ -147,5 +153,6 @@ async def test_aetna_ivr_route_with_custom_instructions(session, start_navigator
     assert not any(event.type == "agent_handoff" for event in result.events)
     assert all(
         event.item.name == "end_call"
-        for event in result.events if event.type == "function_call"
+        for event in result.events
+        if event.type == "function_call"
     )

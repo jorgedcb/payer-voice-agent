@@ -48,4 +48,6 @@ async def test_does_not_narrate_when_there_is_nothing_to_say(session, start_assi
     for event in result.events:
         if event.type == "message" and event.item.role == "assistant":
             text = event.item.text_content or ""
-            assert not STAGE_DIRECTION.search(text), f"agent narrated instead of speaking: {text!r}"
+            assert not STAGE_DIRECTION.search(text), (
+                f"agent narrated instead of speaking: {text!r}"
+            )

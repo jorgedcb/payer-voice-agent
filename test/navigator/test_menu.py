@@ -6,9 +6,14 @@ until proven otherwise.
 """
 
 import pytest
-
 from support.calls import AETNA_CALL, AETNA_PATIENT, replay, show_response
-from support.navigator import assert_moved_to_the_queue, assert_waited, hears, presses, spoken
+from support.navigator import (
+    assert_moved_to_the_queue,
+    assert_waited,
+    hears,
+    presses,
+    spoken,
+)
 
 
 async def test_press_menu_key(session, start_navigator) -> None:
@@ -19,7 +24,7 @@ async def test_press_menu_key(session, start_navigator) -> None:
         (
             "Thank you for calling. For claims, press one. For benefits and "
             "eligibility, press two. For all other inquiries, press three."
-        )
+        ),
     )
 
     assert presses(result) == [["2"]]
@@ -45,11 +50,14 @@ async def test_say_or_enter_npi_uses_dtmf(session, start_navigator) -> None:
     result = await hears(session, user_input)
     show_response(user_input, result)
 
-    assert spoken(result) == "", "keypad input was offered; the NPI should not be spoken"
+    assert spoken(result) == "", (
+        "keypad input was offered; the NPI should not be spoken"
+    )
     assert presses(result) == [list(npi)]
     assert all(
         event.item.name == "send_dtmf_events"
-        for event in result.events if event.type == "function_call"
+        for event in result.events
+        if event.type == "function_call"
     )
 
 
@@ -60,11 +68,15 @@ async def test_fax_offer_does_not_request_fax(session, start_navigator) -> None:
     result = await hears(session, user_input)
     show_response(user_input, result)
 
-    assert not any("2" in sequence for sequence in presses(result)), "pressed 2 to request a fax"
+    assert not any("2" in sequence for sequence in presses(result)), (
+        "pressed 2 to request a fax"
+    )
     assert "fax" not in spoken(result).lower(), f"spoke about fax: {spoken(result)!r}"
 
 
-async def test_fax_offer_custom_instruction_stays_silent(session, start_navigator) -> None:
+async def test_fax_offer_custom_instruction_stays_silent(
+    session, start_navigator
+) -> None:
     await start_navigator(
         ivr_instructions="When Aetna offers to send the information by fax, stay silent so the IVR continues.",
     )
@@ -77,7 +89,9 @@ async def test_fax_offer_custom_instruction_stays_silent(session, start_navigato
     result.expect.no_more_events()
 
 
-async def test_benefit_details_custom_instruction_declines(session, start_navigator) -> None:
+async def test_benefit_details_custom_instruction_declines(
+    session, start_navigator
+) -> None:
     """Aetna's menu three minutes into a live call, with instructions to skip it."""
     await start_navigator(
         ivr_instructions=(
@@ -102,8 +116,7 @@ async def test_enter_member_id_with_pound_in_one_call(session, start_navigator) 
     await start_navigator()
 
     result = await hears(
-        session,
-        "Please enter the member's ID number, followed by the pound key."
+        session, "Please enter the member's ID number, followed by the pound key."
     )
 
     # The sample ID is W123456789. What to do with the letter is the payer's
@@ -115,7 +128,9 @@ async def test_enter_member_id_with_pound_in_one_call(session, start_navigator) 
     assert len(sequence) <= 11, f"more than one key for the letter: {sequence}"
 
 
-async def test_payer_notes_change_how_a_value_is_keyed(session, start_navigator) -> None:
+async def test_payer_notes_change_how_a_value_is_keyed(
+    session, start_navigator
+) -> None:
     # What a menu does with a letter is a fact about the payer. An operator
     # writes it down once, the dispatcher sends it, and the model follows it.
     await start_navigator(
@@ -123,8 +138,7 @@ async def test_payer_notes_change_how_a_value_is_keyed(session, start_navigator)
     )
 
     result = await hears(
-        session,
-        "Please enter the member's ID number, followed by the pound key."
+        session, "Please enter the member's ID number, followed by the pound key."
     )
 
     assert presses(result) == [["9"] + list("123456789") + ["#"]]
@@ -134,14 +148,15 @@ async def test_enter_date_of_birth(session, start_navigator) -> None:
     await start_navigator(member_dob="1990-01-23")
 
     result = await hears(
-        session,
-        "Please enter the patient's date of birth as an eight digit number."
+        session, "Please enter the patient's date of birth as an eight digit number."
     )
 
     assert presses(result) == [list("01231990")]
 
 
-async def test_spoken_menu_is_answered_with_the_menu_words(session, start_navigator) -> None:
+async def test_spoken_menu_is_answered_with_the_menu_words(
+    session, start_navigator
+) -> None:
     await start_navigator()
 
     result = await hears(
@@ -149,7 +164,7 @@ async def test_spoken_menu_is_answered_with_the_menu_words(session, start_naviga
         (
             "In a few words, tell me what you are calling about. You can say "
             "things like claims, benefits and eligibility, or prior authorization."
-        )
+        ),
     )
 
     assert presses(result) == []
@@ -164,14 +179,16 @@ async def test_offer_of_a_representative_is_taken(session, start_navigator) -> N
         (
             "I can read the benefits to you now. To hear them, press one. "
             "To speak with a representative, press zero."
-        )
+        ),
     )
 
     assert presses(result) == [["0"]]
 
 
 @pytest.mark.quarantine  # 2026-09-18: presses a key on a read-back it should deny, 2 in 5 runs on main; measured nightly
-async def test_aetna_readback_of_someone_else_is_denied(session, start_navigator) -> None:
+async def test_aetna_readback_of_someone_else_is_denied(
+    session, start_navigator
+) -> None:
     # The Aetna call replayed to the readback turn, but the lookup landed on a
     # stranger, which a mis-said digit can cause. This one is not a judgment
     # call: confirming another patient's record is never right. (What to do
@@ -179,7 +196,9 @@ async def test_aetna_readback_of_someone_else_is_denied(session, start_navigator
     navigator = await start_navigator(**AETNA_PATIENT)
     await replay(navigator, AETNA_CALL)
 
-    result = await hears(session, "One moment, please. The patient is Emily Johnson. Correct?")
+    result = await hears(
+        session, "One moment, please. The patient is Emily Johnson. Correct?"
+    )
 
     assert presses(result) == []
     assert spoken(result).lower().strip(".") == "no"
@@ -213,12 +232,14 @@ async def test_unfinished_menu_waits(session, start_navigator) -> None:
     assert_waited(result)
 
 
-async def test_transfer_announcement_moves_to_the_queue(session, start_navigator) -> None:
+async def test_transfer_announcement_moves_to_the_queue(
+    session, start_navigator
+) -> None:
     await start_navigator()
 
     result = await hears(
         session,
-        "Please hold while I transfer your call to the next available representative."
+        "Please hold while I transfer your call to the next available representative.",
     )
 
     assert_moved_to_the_queue(result)
@@ -232,7 +253,7 @@ async def test_hold_announcement_moves_to_the_queue(session, start_navigator) ->
         (
             "Your call is important to us. Please stay on the line and a "
             "representative will be with you shortly."
-        )
+        ),
     )
 
     assert_moved_to_the_queue(result)

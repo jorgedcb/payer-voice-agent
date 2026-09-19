@@ -31,11 +31,12 @@ from livekit.agents import (
     inference,
     llm,
 )
-from livekit.agents.beta.tools import EndCallTool, send_dtmf_events as sdk_send_dtmf_events
+from livekit.agents.beta.tools import EndCallTool
+from livekit.agents.beta.tools import send_dtmf_events as sdk_send_dtmf_events
 from livekit.agents.beta.workflows.utils import DtmfEvent
 
-from interview import InterviewAgent
 from dispatch import CallSpec
+from interview import InterviewAgent
 from prompts import Phase, call_date_today, instructions
 
 logger = logging.getLogger(__name__)
@@ -246,7 +247,10 @@ class NavigatorAgent(_PhoneSystemAgent):
     """Phase one: the automated menu."""
 
     def __init__(
-        self, spec: CallSpec, *, llm_model: llm.LLM | None = None,
+        self,
+        spec: CallSpec,
+        *,
+        llm_model: llm.LLM | None = None,
     ) -> None:
         super().__init__(
             spec=spec,
@@ -270,7 +274,9 @@ class NavigatorAgent(_PhoneSystemAgent):
         longer asking you for anything. Do not call it while a menu is still
         listing options or waiting for an entry.
         """
-        logger.info("In the queue; waiting for a representative on the interview's timing")
+        logger.info(
+            "In the queue; waiting for a representative on the interview's timing"
+        )
         # A phase is an agent because the two settings that matter here, the
         # end-of-turn wait and preemptive generation, are read when an agent starts
         # its turn; only the wait can be changed on a running one.
