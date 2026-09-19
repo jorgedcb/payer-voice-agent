@@ -45,11 +45,11 @@ jobs:
     # The prompt-behavior suites (marker `live`, set by conftest on every test
     # that uses a model fixture) call LiveKit inference and need the
     # LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET repository secrets.
-    # Fork PRs do not receive them and are skipped. Model nondeterminism is
-    # handled two ways: a failed test is rerun once on its own before the job
-    # is red, and a known flake is quarantined (pytest -m quarantine) and
-    # measured by the nightly workflow instead.
-    if: ${{ !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]' }}
+    # Without them (a fork, or a checkout with no LiveKit project yet) the job
+    # reports a notice and passes; the offline suite still gates the change.
+    # Model nondeterminism is handled two ways: a failed test is rerun once on
+    # its own before the job is red, and a known flake is quarantined
+    # (pytest -m quarantine) and measured by the nightly workflow instead.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -57,13 +57,26 @@ jobs:
       LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
       LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
     steps:
+      - id: creds
+        name: Check for LiveKit credentials
+        run: |
+          if [ -n "$LIVEKIT_URL" ] && [ -n "$LIVEKIT_API_KEY" ] && [ -n "$LIVEKIT_API_SECRET" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Live tests skipped: LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET are not set as repository secrets"
+          fi
       - uses: actions/checkout@v7
+        if: steps.creds.outputs.present == 'true'
       - uses: astral-sh/setup-uv@v7
+        if: steps.creds.outputs.present == 'true'
         with:
           version: "0.11.32"
           enable-cache: true
       - run: uv sync --locked
+        if: steps.creds.outputs.present == 'true'
       - name: Run, then rerun only what failed
+        if: steps.creds.outputs.present == 'true'
         run: |
           uv run --no-sync pytest test/ -q --tb=short -m "live and not quarantine" \
             || uv run --no-sync pytest test/ -q --tb=short -m "live and not quarantine" --last-failed --last-failed-no-failures=none
