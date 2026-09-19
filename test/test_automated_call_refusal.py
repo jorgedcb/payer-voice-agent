@@ -38,9 +38,48 @@ async def test_a_refusal_ends_the_call(session, start_assistant, refusal) -> Non
     assert called(result, "end_call"), "a refusal to deal with an AI ends the call"
 
 
+# The representative asked this after verifying the caller's name, callback
+# number, facility and NPI. Keep that context, with synthetic identifiers.
+IDENTITY_CHECK = PICKUP + [
+    ("user", "May I have your best callback number?"),
+    ("assistant", "Two, zero, two ... five, five, five ... zero, one, two, three."),
+    ("user", "And where are you calling from?"),
+    ("assistant", "I'm calling from Example Physical Therapy."),
+    ("user", "Is this an office or facility?"),
+    ("assistant", "It is a facility."),
+    ("user", "And may I have the NPI number?"),
+    ("assistant", "One, four, seven ... seven, five, eight ... three, nine, two, six."),
+    ("user", "Let me confirm: one four seven seven five eight three nine two six?"),
+    ("assistant", "Yes, that's correct."),
+]
+
+
+@pytest.mark.parametrize("question", [
+    "Correct? Am I speaking with a live representative",
+    "Are you a live representative?",
+])
+async def test_live_representative_question_gets_only_yes(
+    session, start_assistant, question
+) -> None:
+    agent = await start_assistant(
+        caller_first_name="Greta", caller_last_initial="S",
+        callback_number="2025550123", facility_name="Example Physical Therapy",
+        npi="1477583926",
+    )
+    await replay(agent, IDENTITY_CHECK)
+
+    result = await session.run(user_input=question)
+    show_response(question, result)
+
+    spoken = result.expect.next_event().is_message(role="assistant")
+    assert spoken.event().item.text_content.strip().lower().rstrip(".! ") == "yes"
+    result.expect.no_more_events()
+
+
 @pytest.mark.parametrize("question", [
     "Greta, are you a virtual assistant, or are you a human being?",
     "Before we continue, am I speaking with a real person or an automated system?",
+    "Am I speaking with a live human representative?",
 ])
 async def test_asked_if_ai_says_so_and_gives_a_reason_to_stay(
     session, start_assistant, llm, question
