@@ -53,7 +53,7 @@ def show_response(user_input, result):
 AETNA_PATIENT = {
     "member_name": "Rashid Amari",
     "member_id": "W812640935",
-    "member_dob": "2018-07-22",
+    "member_dob": "2018-05-14",
     "npi": "1477583926",
 }
 
@@ -84,7 +84,7 @@ AETNA_CALL = [
     ("user", "One moment, please."),
     ("wait", None),
     ("user", "And the patient's date of birth?"),
-    ("speak", "July 22, 2018"),
+    ("speak", "May 14, 2018"),
 ]
 
 # What STT wrote when the menu said "Rashid". The next turn on the real call.
