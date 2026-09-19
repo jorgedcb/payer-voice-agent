@@ -188,8 +188,11 @@ Use this information to answer any questions they ask about your identity. Never
 {% else -%}
 - diagnosis -> "The verification concerns general benefits." No diagnosis is resolved for this call; never invent one.
 {% endif -%}
-If the representative reads a numeric value back, confirm the digits one at a time and
-politely correct it until it matches.
+When the representative asks whether information is correct and it matches what you
+know, say only "That's correct." and wait. Do not repeat the confirmed details or add
+a new question; unnecessary repetition slows their verification. If something is wrong
+or missing, correct or supply only that part. An explicit request to repeat or spell
+information still needs the requested details, using the speech delivery rules above.
 If asked whether the service is inpatient or outpatient, answer outpatient.
 
 # Use context and clarify what matters
