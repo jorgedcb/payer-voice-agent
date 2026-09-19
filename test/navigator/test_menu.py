@@ -48,7 +48,7 @@ async def test_say_or_enter_npi_uses_dtmf(session, start_navigator) -> None:
     assert spoken(result) == "", "keypad input was offered; the NPI should not be spoken"
     assert presses(result) == [list(npi)]
     assert all(
-        event.item.name in {"send_dtmf_events", "wait"}
+        event.item.name == "send_dtmf_events"
         for event in result.events if event.type == "function_call"
     )
 

@@ -2,7 +2,7 @@
 
 import json
 
-from support.calls import called
+from support.calls import assert_wait_is_exclusive, called
 
 
 async def hears(session, text: str):
@@ -23,6 +23,7 @@ async def hears(session, text: str):
         if ev.type == "message" and ev.item.role == "assistant" and ev.item.text_content
     ]
     assert not stray, f"navigator wrote text instead of calling a tool: {stray}"
+    assert_wait_is_exclusive(result)
     return result
 
 

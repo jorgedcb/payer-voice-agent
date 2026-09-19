@@ -2,7 +2,7 @@
 
 import pytest
 
-from support.calls import assert_yields_turn, called, replay, show_response
+from support.calls import assert_wait_is_exclusive, assert_yields_turn, called, replay, show_response
 
 
 LOOKUP = [
@@ -52,6 +52,7 @@ async def test_answers_when_the_representative_needs_a_response(
     show_response(question, result)
 
     assert not called(result, "end_call")
+    assert_wait_is_exclusive(result)
     await result.expect.contains_message(role="assistant").judge(
         llm,
         intent=f"In response to the representative saying {question!r}: {intent} "

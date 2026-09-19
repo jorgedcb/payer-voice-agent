@@ -90,15 +90,14 @@ async def navigator_llm(request):
     would hide which model the prompt was actually measured against."""
     if request.config.getoption("--offline"):
         pytest.skip("requires LiveKit inference")
-    async with inference.LLM(model=NAVIGATOR_TEST_MODEL) as model:
+    async with inference.LLM(model=NAVIGATOR_TEST_MODEL, extra_kwargs={"parallel_tool_calls": False}) as model:
         yield model
 
 
-def _send_dtmf_events(_ctx, events) -> str:
-    # Same return the real tool gives, so the model's follow-up turn sees what it
-    # sees in production. The positional order (ctx first) matters: the SDK trims
-    # a mock's positionals by count, not by name.
-    return f"Successfully sent DTMF events: {', '.join(events)}"
+def _send_dtmf_events(_ctx, events) -> None:
+    # Successful input ends silently, like the production wrapper. The SDK trims
+    # a mock's positionals by count, so keep ctx first.
+    return None
 
 
 @pytest.fixture
@@ -120,4 +119,3 @@ async def start_navigator(navigator_llm, session):
         return under_test
 
     return _start
-

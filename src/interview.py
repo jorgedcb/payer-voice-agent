@@ -74,12 +74,14 @@ class InterviewAgent(Agent):
 
     @function_tool()
     async def wait(self) -> None:
-        """Say nothing this turn when the line needs no reply from you.
+        """Stay silent as the only action when the line needs no reply from you.
 
         Choose silence when the representative needs time to look up information,
-        type, finish speaking, or complete a hold or transfer. A brief spoken
-        acknowledgment is also valid when appropriate, with or without this tool.
-        Do not narrate the silence.
+        type, finish speaking, or complete a hold or transfer. If a brief spoken
+        acknowledgment is appropriate, say it and finish the response instead.
+        Never combine wait with speech or another tool in the same turn.
+        Finishing a spoken response already gives the representative the floor.
+        Do not narrate silence.
         Questions, permission requests (including extending a hold), and
         presence checks need spoken answers, even during a wait. Resume
         verification when the representative is ready.

@@ -15,10 +15,23 @@ def called(result, name: str) -> bool:
     return any(ev.type == "function_call" and ev.item.name == name for ev in result.events)
 
 
+def assert_wait_is_exclusive(result) -> None:
+    """Silence is an alternative to speech or another action, never an extra step."""
+    if not called(result, "wait"):
+        return
+    actions = [ev for ev in result.events if ev.type == "function_call"]
+    speech = [
+        ev for ev in result.events
+        if ev.type == "message" and ev.item.role == "assistant" and ev.item.text_content
+    ]
+    assert len(actions) == 1 and not speech, "wait must be the turn's only action."
+
+
 async def assert_yields_turn(result, judge, *, after: str) -> None:
     """Accept silence or a brief acknowledgment without advancing or closing."""
     assert not called(result, "end_call"), "Waiting must not start closing."
-    # A model may say something, call wait, do both, or produce no speech.
+    assert_wait_is_exclusive(result)
+    # A model may acknowledge, call wait alone, or produce no speech.
     # Check every spoken message rather than pinning a tool choice or wording.
     for index, event in enumerate(result.events):
         if event.type == "message" and event.item.role == "assistant" and event.item.text_content:

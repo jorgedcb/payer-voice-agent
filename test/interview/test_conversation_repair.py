@@ -12,7 +12,7 @@ reports that the recording says Annie where STT wrote Anita.
 
 import pytest
 
-from support.calls import replay, show_response
+from support.calls import assert_wait_is_exclusive, called, replay, show_response
 
 
 # The interview inherited these user messages, without the navigator's tools.
@@ -204,6 +204,9 @@ async def test_casual_thanks_does_not_trigger_unsolicited_name_correction(
 
     # A casual thanks is not an identity-confirmation question. Correcting a
     # possible STT substitution adds a detour; silence or an acknowledgment is OK.
+    if called(result, "wait"):
+        assert_wait_is_exclusive(result)
+        return
     for _ in result.events:
         await result.expect.next_event().is_message(role="assistant").judge(
             llm,

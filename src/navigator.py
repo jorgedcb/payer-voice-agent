@@ -15,8 +15,8 @@ read the announcement; a queue's pickup line is whatever the person says.
 
 The model decides what to do from the transcript alone: stay quiet, speak a menu
 option, key digits, or hand off. Nothing here second-guesses it. Keying goes
-through LiveKit's own `send_dtmf_events`; if a real line shows dropped digits or
-double presses, that is the moment to replace it with our own tool, not before.
+through LiveKit's own `send_dtmf_events`, with successful results suppressed so
+the agent gives the line time to respond instead of generating another action.
 """
 
 import logging
@@ -25,12 +25,14 @@ from datetime import date
 from livekit.agents import (
     Agent,
     ModelSettings,
+    RunContext,
     TurnHandlingOptions,
     function_tool,
     inference,
     llm,
 )
-from livekit.agents.beta.tools import EndCallTool, send_dtmf_events
+from livekit.agents.beta.tools import EndCallTool, send_dtmf_events as sdk_send_dtmf_events
+from livekit.agents.beta.workflows.utils import DtmfEvent
 
 from interview import InterviewAgent
 from dispatch import CallSpec
@@ -74,8 +76,21 @@ HOLD_TURN_HANDLING = TurnHandlingOptions(
 
 def navigator_llm() -> llm.LLM:
     return llm.FallbackAdapter(
-        [inference.LLM(model=NAVIGATOR_LLM), inference.LLM(model=NAVIGATOR_FALLBACK_LLM)]
+        [
+            inference.LLM(model=model, extra_kwargs={"parallel_tool_calls": False})
+            for model in (NAVIGATOR_LLM, NAVIGATOR_FALLBACK_LLM)
+        ]
     )
+
+
+@function_tool(description=sdk_send_dtmf_events.info.description)
+async def send_dtmf_events(ctx: RunContext, events: list[DtmfEvent]) -> str | None:
+    result = await sdk_send_dtmf_events(ctx, events)
+    # The SDK returns text even on success, which otherwise starts another LLM
+    # turn. Preserve failures (and unfamiliar results) so recovery stays possible.
+    if result.startswith("Successfully sent DTMF events:"):
+        return None
+    return result
 
 
 class _PhoneSystemAgent(Agent):
@@ -127,10 +142,8 @@ class _PhoneSystemAgent(Agent):
             llm=llm_model,
             turn_handling=turn_handling,
             chat_ctx=chat_ctx,
-            # LiveKit's stock tool and description, as is. A re-written
-            # description with keying rules was tried and changed nothing. (The
-            # tests intercept its execution with `mock_tools`; there is no room
-            # to publish into there.) Both phases keep it: a system that says it
+            # Keep the SDK's keying implementation and description; only a
+            # successful result is silenced. Both phases keep it: a system that says it
             # is transferring and then asks for the member ID again is still a
             # menu, and the agent has to be able to answer it.
             tools=[send_dtmf_events, *end_call_tool.tools],
@@ -147,23 +160,21 @@ class _PhoneSystemAgent(Agent):
         # straight into the payer's menu, so there is no turn where text is right.
         # Per-agent on purpose: the interview agent must keep free text.
         #
-        # This replaces the SDK's own setting, including the tool_choice="none" it
-        # sends to end a tool chain at max_tool_steps. Only `send_dtmf_events`
-        # extends a chain (it returns a string; the tools below return None), so
-        # that turn comes after max_tool_steps consecutive presses. On it the SDK
-        # logs and drops the forced call, the line stays quiet, and the next
-        # utterance starts a fresh turn -- which beats letting "none" through,
-        # since that would put text into the menu.
+        # Successful speech/keypad actions return None and end the tool chain.
+        # Errors can still request recovery. If recovery exhausts max_tool_steps,
+        # the SDK drops the forced call rather than speaking text into the menu.
         model_settings = ModelSettings(tool_choice="required")
         return Agent.default.llm_node(self, chat_ctx, tools, model_settings)
 
     @function_tool()
     async def wait(self) -> None:
-        """Do nothing this turn.
+        """Stay silent as the only action this turn.
 
         Use it while the system is still talking or listing options, is playing
         hold music, is announcing a transfer or a wait time, or is looking up an
         entry you just gave it. Never acknowledge a recording out loud.
+        Do not combine this with speech or another tool. After another action,
+        finish the turn; the session already listens for the line's response.
         """
         # Returning None is what keeps the line quiet: a tool with no output gets
         # no spoken follow-up. Asked to "say nothing", a chat model says "Okay."
