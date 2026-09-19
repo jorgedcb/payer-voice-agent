@@ -25,7 +25,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "test"]
 testpaths = ["test"]
 asyncio_mode = "auto"
 # Capability probes measure what a model does at a turn where the right answer
@@ -48,7 +48,7 @@ python_version = "3.14"
 ignore_missing_imports = true
 
 [tool.deptry]
-known_first_party = ["agent", "call_reference", "dispatch", "interview", "navigator", "pass_rates", "prompts", "recording", "report", "calls", "test_navigator"]
+known_first_party = ["agent", "call_reference", "dispatch", "interview", "navigator", "pass_rates", "prompts", "recording", "report", "support"]
 # Tests are scanned too; pytest is only imported there.
 exclude = ["venv", "\\.venv", "\\.git"]
 

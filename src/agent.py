@@ -244,7 +244,7 @@ async def entrypoint(ctx: JobContext):
         #
         # Order set from evidence, not preference: on the seeded context from call
         # ttfa-20260905-000505, Gemma emitted a spoken stage direction in 6 of 10
-        # runs and GPT-4.1 in 0 of 10. See test/test_stage_directions.py.
+        # runs and GPT-4.1 in 0 of 10. See test/interview/test_stage_directions.py.
         llm=llm.FallbackAdapter(
             [
                 inference.LLM(model=PRIMARY_LLM),

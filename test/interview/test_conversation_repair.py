@@ -12,7 +12,7 @@ reports that the recording says Annie where STT wrote Anita.
 
 import pytest
 
-from calls import replay, show_response
+from support.calls import replay, show_response
 
 
 # The interview inherited these user messages, without the navigator's tools.

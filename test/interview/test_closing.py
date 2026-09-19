@@ -7,7 +7,7 @@ collected by the task whatever the model does with the goodbye.
 import pytest
 
 from call_reference import CallReferenceTask
-from calls import replay, show_response
+from support.calls import replay, show_response
 
 
 CLOSING = [

@@ -7,7 +7,7 @@ decisions, not audio timing or whether Aetna follows these branches on a live ca
 
 import json
 
-from calls import AETNA_PATIENT, called, show_response
+from support.calls import AETNA_PATIENT, called, show_response
 
 
 AETNA_IVR_INSTRUCTIONS = (

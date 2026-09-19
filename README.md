@@ -54,6 +54,18 @@ deciding what to do with them.
 
 ## Testing
 
+Tests are grouped by responsibility:
+
+- `test/interview/`: representative conversations, corrections, and closing.
+- `test/navigator/`: phone menus, authentication, and IVR behavior.
+- `test/call_flow/`: phase transitions, handoffs, and the shared opening contract.
+- Root-level test files: shared formatting, dispatch, recording, reporting, and
+  other call infrastructure.
+
+Shared fixtures and collection rules live in `test/conftest.py`; transcript
+replay and assertion helpers live in `test/support/`. Keep fixtures needed by
+multiple suites in the root `conftest.py` so sibling folders can use them.
+
 Model behavior is measured, not asserted once. `test/` has three kinds of test:
 
 - **Offline** tests cover formatting, dispatch parsing, report and recording
@@ -78,6 +90,11 @@ from 100% to 80% shows up there even when each PR run happened to pass.
 uv sync
 uv run pytest --offline          # deterministic suite
 uv run pytest                    # plus the live suites (needs LiveKit credentials)
+uv run pytest test/interview/     # interview tests
+uv run pytest test/navigator/     # navigator tests
+uv run pytest test/call_flow/     # transitions between agents
+uv run pytest test/interview/ --offline
+uv run pytest test/navigator/ -m "live and not quarantine"
 LK_TEST_MODEL=openai/gpt-4.1 uv run pytest   # compare a different model
 ```
 
