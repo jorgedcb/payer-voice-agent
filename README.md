@@ -112,6 +112,5 @@ each operator has their own.
 
 ## Status and license
 
-This is the code as it runs in production, published with the company's
-permission. The license is being finalized; until a `LICENSE` file lands,
-treat the repository as all rights reserved.
+This is the code as it runs in production at [Solum](https://getsolum.com),
+published with the company's permission. MIT licensed; see `LICENSE`.
