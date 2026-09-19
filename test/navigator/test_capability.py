@@ -10,8 +10,8 @@ The main suite skips them (see conftest.py).
 """
 
 import pytest
-from calls import AETNA_CALL, AETNA_PATIENT, AETNA_READBACK, replay
-from test_navigator import hears, presses, spoken
+from support.calls import AETNA_CALL, AETNA_PATIENT, AETNA_READBACK, replay
+from support.navigator import hears, presses, spoken
 
 pytestmark = pytest.mark.capability
 

@@ -17,7 +17,7 @@ openai/gpt-4.1. Re-check with LK_TEST_MODEL.
 import re
 
 import pytest
-from calls import replay
+from support.calls import replay
 
 # A parenthetical long enough to be prose, so an aside like "(NPI)" doesn't trip it.
 STAGE_DIRECTION = re.compile(r"[(\[][^)\]]{10,}[)\]]")

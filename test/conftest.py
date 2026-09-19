@@ -5,7 +5,7 @@ suite can't drift apart. Override them for a comparison run without editing any
 file:
 
     LK_TEST_MODEL=google/gemma-4-31b-it uv run pytest
-    LK_NAVIGATOR_TEST_MODEL=openai/gpt-4.1 uv run pytest test/test_navigator.py
+    LK_NAVIGATOR_TEST_MODEL=openai/gpt-4.1 uv run pytest test/navigator/
 """
 
 from os import getenv

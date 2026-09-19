@@ -4,7 +4,7 @@ These tests pin the mechanics of the handoff, not menu judgment. They should kee
 passing unchanged once the navigator grows real IVR logic.
 """
 
-from calls import handoff_opening, show_response, turn_settings
+from support.calls import handoff_opening, show_response, turn_settings
 from interview import InterviewAgent
 
 REP_GREETING = (
