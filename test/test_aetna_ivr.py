@@ -49,7 +49,7 @@ async def test_aetna_ivr_route_with_custom_instructions(session, start_navigator
             "812640935",
         ),
         ("One moment, please.", None),
-        ("Now enter or say the patient's date of birth.", "05142018"),
+        ("Now enter or say the patient's date of birth.", "07222018"),
         (
             "One moment, please. The patient is Rashid Amari. Correct? "
             "Say yes or press one. No, two.",
