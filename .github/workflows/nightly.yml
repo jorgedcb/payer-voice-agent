@@ -15,8 +15,32 @@ on:
         default: "5"
 
 jobs:
+  credentials:
+    # The whole run calls LiveKit inference. Without the three repository
+    # secrets (a fork, or no LiveKit project yet) there is nothing to measure,
+    # so the run reports a notice and ends green instead of failing nightly.
+    name: LiveKit credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    env:
+      LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+    steps:
+      - id: check
+        run: |
+          if [ -n "$LIVEKIT_URL" ] && [ -n "$LIVEKIT_API_KEY" ] && [ -n "$LIVEKIT_API_SECRET" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Nightly pass rates skipped: LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET are not set as repository secrets"
+          fi
   pass-rates:
     name: Pass rates
+    needs: credentials
+    if: needs.credentials.outputs.present == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
