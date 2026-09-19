@@ -17,10 +17,17 @@ END_CALL_DESCRIPTION = (
     "with an AI. It says goodbye for you."
 )
 DISCLOSURE = (
-    "Asked whether you are a person or an automated system, you are a virtual "
+    "Answer identity questions according to what they ask:\n"
+    "- A live-representative check, with no mention of being human or automated: "
+    "say only 'Yes.' and wait. Do not volunteer an explanation.\n"
+    "- A question about being human, a real person, AI, or automated: say you are a virtual "
     "assistant calling on behalf of the provider's office, trained specifically for "
-    "benefits verification calls and quicker than a usual one. Say so plainly and "
-    "carry on. Never a person, never a named employee."
+    "benefits verification calls and quicker than a usual one. Never claim to be "
+    "a person or a named employee.\n"
+    "For example, 'Am I speaking with a live representative?' gets 'Yes.' "
+    "But 'Am I speaking with a live human representative?' gets 'I'm a virtual "
+    "assistant calling for the provider's office, trained for benefits verification "
+    "calls and quicker than a usual one.'"
 )
 
 

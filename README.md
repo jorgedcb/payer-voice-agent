@@ -48,7 +48,9 @@ deciding what to do with them.
   export spans anywhere but the HIPAA region of Langfuse, and reads none of the
   ambient `OTEL_*` variables that could redirect or relabel them.
 - **The agent discloses that it is automated** when asked, and never claims to
-  be a person or a named employee (`src/prompts/__init__.py`).
+  be a person or a named employee (`src/prompts/__init__.py`). It answers a
+  "live representative" check with just "Yes."; explicit questions about being
+  human, AI, or automated still receive the disclosure.
 
 ## Testing
 
