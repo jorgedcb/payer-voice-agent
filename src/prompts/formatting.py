@@ -34,8 +34,7 @@ def nato_spell(word: str) -> str:
     """ "c" -> "C for charlie"; "abc" -> "A for alpha, B for bravo, C for charlie".
 
     The letter is upper-cased so the voice reads it as a letter: lowercase "i"
-    and "a" are words to a TTS model, and on a live call "A, n, n, i, e" came
-    out unintelligible enough that the representative asked twice.
+    and "a" are words to a TTS model. NATO words make the letters unambiguous.
     """
     parts = [
         f"{ch.upper()} for {NATO_ALPHABET[ch]}"
@@ -79,10 +78,10 @@ def speak_phone(s: str) -> str:
 def speak_npi(s: str) -> str:
     """ "1234567893" -> "one, two, three ... four, five, six ... seven, eight, nine, three".
 
-    The NPI read-back Jorge measured as clearest on ElevenLabs Flash: each digit a
-    word, commas within a group of three, three and four, and a spaced ellipsis
-    between groups so the voice rests where a person writing it down does. Anything
-    that is not ten digits is read as one comma-separated group.
+    Each digit is a word, with commas within groups of three, three and four,
+    and a spaced ellipsis between groups so the voice rests where a person
+    writing it down does. Anything that is not ten digits is read as one
+    comma-separated group.
     """
     return _speak_three_three_four([ch for ch in s if ch.isdecimal()])
 
@@ -154,8 +153,7 @@ def speak_cpt_codes(codes: list[str]) -> str:
             spoken.extend(speak_code(code) for code in run)
     if collapsed_any and len(spoken) > 1 and len(runs[-1]) < _MIN_RANGE_RUN:
         # After a range, "and" marks a trailing single code as its own item, not
-        # the end of the range it follows. It never opens a range, and a flat list
-        # never had an "and" and needs none.
+        # the end of the range it follows. Ranges and flat lists need no prefix.
         spoken[-1] = f"and {spoken[-1]}"
     return PAUSE.join(spoken)
 

@@ -49,27 +49,23 @@ PROMPT = "navigator"
 # the navigator gets the newer model. The tests run against this constant.
 NAVIGATOR_LLM = "openai/gpt-5.6-luna"
 # Takes over only when luna's endpoint errors, never on output quality. Chosen
-# from a different vendor so one provider outage cannot take both. It passed
-# the navigator suite 9/9 on three runs, about two seconds slower per turn.
+# from a different vendor so one provider outage cannot take both. Historical
+# results are in docs/decisions.md#model-selection.
 NAVIGATOR_FALLBACK_LLM = "google/gemini-3.8-flash"
 
 # Phase one. A menu pauses between its options, so a wait shorter than the pause
 # answers a question that is still being asked. Preemptive generation is off for
-# the same reason: the menu keeps talking, so the speculative result is nearly
-# always invalidated (three times on the 2026-09-06 Aetna call), each one a wasted
-# model call -- and this agent's speech bypasses the pipeline TTS anyway, so the
-# preemptive-TTS half gains nothing.
+# the same reason: continued menu speech invalidates speculative results.
+# Speech uses a tool that bypasses pipeline TTS, so preemptive TTS adds no benefit.
 MENU_TURN_HANDLING = TurnHandlingOptions(
     preemptive_generation={"enabled": False},
     endpointing={"min_delay": 1.5, "max_delay": 3.0},
 )
 
 # Phase two. No endpointing of its own: the session's, which is the interview's,
-# so the whole human half of the call waits the same. On one live call the menu's
-# 1.5s was part of the 4.35s a representative sat through after asking for our
-# name, before hearing anything back. Preemptive generation is on here because
-# nothing is talking over the guess: the next voice is the person, and starting
-# the model before their turn is confirmed is the rest of that wait.
+# so the whole human half of the call waits the same. Start the model before
+# the person's turn is confirmed to reduce pickup latency; speech still uses
+# a tool rather than preemptive pipeline TTS.
 HOLD_TURN_HANDLING = TurnHandlingOptions(
     preemptive_generation={"enabled": True, "preemptive_tts": False},
 )
@@ -192,10 +188,8 @@ class _PhoneSystemAgent(Agent):
                 For a value, use THIS CALL; write identifiers digit by digit with
                 spaces ("0 0 1 2") so they are read as digits, and a date as a date.
         """
-        # Speech is a tool for the same reason waiting is: once the other actions
-        # are tools, both gpt-4.1 and luna stopped answering speech-only menus with
-        # text and keyed an invented digit instead. With every action a tool call,
-        # the model's plain text output is never the channel to the line.
+        # Speech needs a tool too: every navigator action uses the same channel,
+        # including answers to menus that accept speech instead of keypad input.
         # The tool call already carries the words in the chat history; letting
         # say() add them again as an assistant message records every utterance
         # twice, and makes it look like the model wrote text on its own.
@@ -261,9 +255,8 @@ class NavigatorAgent(_PhoneSystemAgent):
         )
 
     # No on_enter. The navigator never speaks first: when the call connects the
-    # payer's system is talking and nothing has asked us anything yet. (A greeting
-    # here also starts a second LLM generation that overlaps the first real turn,
-    # which made the handoff tool run twice in the test harness.)
+    # payer's system is talking and nothing has asked us anything yet. Avoid an
+    # extra generation that could overlap the first real turn.
 
     @function_tool()
     async def hold_for_representative(self) -> HoldAgent:

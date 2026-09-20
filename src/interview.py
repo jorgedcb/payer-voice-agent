@@ -54,9 +54,8 @@ class InterviewAgent(Agent):
         # The first words to the representative, written by the navigator in the
         # same model call that decided a person answered (see navigator.py).
         self._opening = (opening or "").strip()
-        # The call reference is the proof a verification happened. Prompt rules
-        # alone let the model hang up on a goodbye about one turn in five, so
-        # end_call collects it through CallReferenceTask before shutting down.
+        # Enforce reference collection through a task before shutdown; a prompt
+        # alone cannot guarantee the closing is complete.
         self._call_reference: CallReferenceResult | None = None
         self._closing = False
         # One date for the whole call, captured at dial by the navigator: a call
@@ -124,10 +123,8 @@ class InterviewAgent(Agent):
     async def on_enter(self) -> None:
         # The navigator writes the opening in the same model call that hands off,
         # so the representative hears it as soon as that call lands, with no model
-        # call here. On one live call the rep waited 4.35s after asking our name,
-        # said "Hello?" over the opening, and ended the call. say() records it in
-        # the chat context, so the model continues from the rep's reply instead of
-        # introducing itself again.
+        # call here. say() records it in the chat context, so the model continues
+        # from the rep's reply instead of introducing itself again.
         #
         # Nothing to say means nobody was handed off to us: the agent was started
         # directly (tests, the console), where the other side speaks first and the

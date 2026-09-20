@@ -112,19 +112,16 @@ async def entrypoint(ctx: JobContext):
         # Fallback fires on provider errors only -- timeouts, 4xx/5xx, mid-stream
         # drops -- never on output quality, so the primary handles every call that
         # doesn't error.
-        #
-        # Order set from evidence, not preference: on the seeded context from call
-        # ttfa-20260905-000505, Gemma emitted a spoken stage direction in 6 of 10
-        # runs and GPT-4.1 in 0 of 10. See test/interview/test_stage_directions.py.
+        # GPT-4.1 is primary to reduce spoken stage directions; historical results
+        # are in docs/decisions.md#model-selection.
         llm=llm.FallbackAdapter(
             [
                 inference.LLM(model=PRIMARY_LLM),
                 inference.LLM(model=FALLBACK_LLM),
             ]
         ),
-        # STT with fallback: Deepgram Flux primary, AssemblyAI backup. Flux is
-        # Deepgram's model built for voice-agent conversation (English), replacing
-        # Nova-3 as a trial.
+        # STT with fallback: Flux handles English conversation; AssemblyAI provides
+        # a second provider if it fails. Selection history: docs/decisions.md.
         stt=stt.FallbackAdapter(
             [
                 inference.STT.from_model_string("deepgram/flux-general-en"),
@@ -134,35 +131,20 @@ async def entrypoint(ctx: JobContext):
         # TTS with fallback: ElevenLabs primary, then xAI, then Cartesia. See
         # tts_chain for why the primary is built there and not inline.
         tts=tts.FallbackAdapter(tts_chain(spec.tts_voice_id)),
-        # Words the recognizer would otherwise guess at. On a live call the menu
-        # read back the patient "Rashid" and STT heard "Richard Amari", so the
-        # navigator denied its own authentication. Session-owned, so it survives
-        # the handoff, and mapped into whichever STT is active.
-        #
-        # The member's name and our own caller name, which reps repeat back all call
-        # ("Thank you, Greta", "Hi Greta") and STT mangles: on one live call it wrote
-        # "Praia", "Maria", "prayer" and "Pete" for the caller name of the day.
-        #
-        # The facility name was a keyterm too, until a live call: for a facility
-        # named "<something> ABA LLC" the rep's "Hold on" came back as "ABA." (confidence 0.57)
-        # right after the agent said "ABA therapy". Facility names are full of words a
-        # rep says for other reasons; a first name is only ever the caller.
+        # Bias identity names so transcription errors do not derail verification.
+        # Exclude facility names: their common words can bias unrelated speech.
+        # Session ownership preserves these hints across STT fallback and handoff.
         stt_context_options=STTContextOptions(
             keyterms=[spec.member_name, spec.caller_first_name],
         ),
-        # 0.25s is the floor the audio turn detector allows (lower raises ValueError
-        # at session start). The default 0.55 was setting the wait on every turn the
-        # detector cleared: measured 0.577s each time, on every session.
+        # Use the audio turn detector's minimum supported silence window so VAD
+        # does not impose extra latency. Timing evidence: docs/decisions.md.
         vad=silero.VAD.load(min_silence_duration=0.25),  # Voice activity detection
         turn_handling=TurnHandlingOptions(
             turn_detection=inference.TurnDetector(),  # Audio end-of-turn detection
             endpointing={
                 # Only max_delay is set; min_delay stays at the audio detector's 0.3
-                # default, which now binds the floor instead of the VAD's silence window.
-                #
-                # 2.5 (the default) is what every turn scoring under the 0.56 threshold
-                # waited -- about half of them on real calls. 1.5 still clears the
-                # longest genuine mid-turn pause measured so far (1.164s) by 0.34s.
+                # default. Cap uncertain turns while allowing mid-sentence pauses.
                 "max_delay": 1.5,
             },
             preemptive_generation={
@@ -176,28 +158,8 @@ async def entrypoint(ctx: JobContext):
     # exports to Langfuse already carries them (lk.end_of_turn_delay,
     # lk.response.ttft, lk.response.ttfb, lk.llm_metrics, lk.tts_metrics).
 
-    # Start the session with noise cancellation enabled.
-    #
-    # BVCTelephony is the telephony-tuned Krisp model, for narrowband (8 kHz) SIP
-    # audio. Plain BVC is tuned for wideband and was what ran during the phone
-    # benchmark, where the turn detector cleared only 50% of turns. Swapped here to
-    # measure whether matching the model to the audio raises that rate.
-    #
-    # NOTE: this makes the agent telephony-specific. For a mixed deployment, pick
-    # the model from the participant kind (BVC for WebRTC, BVCTelephony for SIP).
-    #
-    # Start the session before dialing, so the room connect, the track
-    # subscription and the STT stream are all open by the time the line is
-    # answered -- a payer's menu starts talking on the first frame, and this
-    # agent never speaks first, so there is no greeting to hold back. (The
-    # outbound-calls guide starts after the answer only to keep an opening
-    # greeting from playing into the ringing; LiveKit's own outbound example
-    # starts first for the same reason as here.) Whatever answers (a menu, a
-    # person, a voicemail) is the navigator's to judge: it hands off to the
-    # interview when a human speaks, and hangs up on a voicemail greeting.
-    #
-    # The call starts with the navigator; the InterviewAgent is only ever reached by
-    # its handoff, once a human is on the line.
+    # Start the voice pipeline before dialing to capture the payer's first audio.
+    # The navigator listens first and hands off only once a human speaks.
     if payer_phone:
         # Egress requires an existing room. Request it before placing the SIP call.
         await ctx.connect()
@@ -212,6 +174,8 @@ async def entrypoint(ctx: JobContext):
                 # first. Console mode has no phone and takes the default.
                 participant_identity=PAYER_IDENTITY if payer_phone else NOT_GIVEN,
                 audio_input=room_io.AudioInputOptions(
+                    # Match noise cancellation to SIP audio. Comparative benefit
+                    # is unverified; see docs/decisions.md#telephony-noise-cancellation.
                     noise_cancellation=noise_cancellation.BVCTelephony(),
                 ),
             ),

@@ -35,6 +35,10 @@ deciding what to do with them.
 
 ## Design notes worth reading
 
+The [decision log](docs/decisions.md) records implementation history, earlier
+measurements, and the unverified BVCTelephony comparison. Inline comments explain
+the current rationale.
+
 - **Identifiers are spoken as words with pauses**, not as digit strings
   (`src/prompts/formatting.py`). "1234567893" becomes "one, two, three ...
   four, five, six ... seven, eight, nine, three". Letters are NATO-spelled. The
