@@ -14,8 +14,8 @@ import pytest
 from livekit.agents import AgentSession, inference, mock_tools
 
 import agent
-from dispatch import sample_spec
 import navigator
+from dispatch import sample_spec
 from interview import InterviewAgent
 from navigator import HoldAgent, NavigatorAgent
 
@@ -26,10 +26,18 @@ NAVIGATOR_TEST_MODEL = getenv("LK_NAVIGATOR_TEST_MODEL", navigator.NAVIGATOR_LLM
 
 
 def pytest_addoption(parser):
-    parser.addoption("--offline", action="store_true", help="Skip tests that use LiveKit inference")
+    parser.addoption(
+        "--offline", action="store_true", help="Skip tests that use LiveKit inference"
+    )
 
 
-MODEL_FIXTURES = {"llm", "navigator_llm", "session", "start_assistant", "start_navigator"}
+MODEL_FIXTURES = {
+    "llm",
+    "navigator_llm",
+    "session",
+    "start_assistant",
+    "start_navigator",
+}
 
 
 def pytest_collection_modifyitems(config, items):
@@ -90,7 +98,9 @@ async def navigator_llm(request):
     would hide which model the prompt was actually measured against."""
     if request.config.getoption("--offline"):
         pytest.skip("requires LiveKit inference")
-    async with inference.LLM(model=NAVIGATOR_TEST_MODEL, extra_kwargs={"parallel_tool_calls": False}) as model:
+    async with inference.LLM(
+        model=NAVIGATOR_TEST_MODEL, extra_kwargs={"parallel_tool_calls": False}
+    ) as model:
         yield model
 
 

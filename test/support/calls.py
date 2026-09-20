@@ -12,7 +12,9 @@ from livekit.agents import ChatContext, llm
 
 def called(result, name: str) -> bool:
     """Whether the agent called this tool during the turn."""
-    return any(ev.type == "function_call" and ev.item.name == name for ev in result.events)
+    return any(
+        ev.type == "function_call" and ev.item.name == name for ev in result.events
+    )
 
 
 def assert_wait_is_exclusive(result) -> None:
@@ -21,7 +23,8 @@ def assert_wait_is_exclusive(result) -> None:
         return
     actions = [ev for ev in result.events if ev.type == "function_call"]
     speech = [
-        ev for ev in result.events
+        ev
+        for ev in result.events
         if ev.type == "message" and ev.item.role == "assistant" and ev.item.text_content
     ]
     assert len(actions) == 1 and not speech, "wait must be the turn's only action."
@@ -34,17 +37,25 @@ async def assert_yields_turn(result, judge, *, after: str) -> None:
     # A model may acknowledge, call wait alone, or produce no speech.
     # Check every spoken message rather than pinning a tool choice or wording.
     for index, event in enumerate(result.events):
-        if event.type == "message" and event.item.role == "assistant" and event.item.text_content:
-            await result.expect[index].is_message(role="assistant").judge(
-                judge,
-                intent=(
-                    f"The representative just said {after!r}. In this context, the reply is "
-                    "A brief conversational acknowledgment or courtesy that gives the "
-                    "representative time to continue. A word or a short sentence is valid; "
-                    "no particular wording is required. Does not ask a question, request "
-                    "a call reference, start a new topic, claim verification is complete, "
-                    "announce disconnection, or narrate stage directions."
-                ),
+        if (
+            event.type == "message"
+            and event.item.role == "assistant"
+            and event.item.text_content
+        ):
+            await (
+                result.expect[index]
+                .is_message(role="assistant")
+                .judge(
+                    judge,
+                    intent=(
+                        f"The representative just said {after!r}. In this context, the reply is "
+                        "A brief conversational acknowledgment or courtesy that gives the "
+                        "representative time to continue. A word or a short sentence is valid; "
+                        "no particular wording is required. Does not ask a question, request "
+                        "a call reference, start a new topic, claim verification is complete, "
+                        "announce disconnection, or narrate stage directions."
+                    ),
+                )
             )
 
 
@@ -138,8 +149,12 @@ async def replay(under_test, history) -> None:
             continue
         call_id = f"call_{n}"
         arguments = json.dumps({"text": payload}) if payload is not None else "{}"
-        chat_ctx.insert(llm.FunctionCall(call_id=call_id, name=kind, arguments=arguments))
         chat_ctx.insert(
-            llm.FunctionCallOutput(call_id=call_id, name=kind, output="", is_error=False)
+            llm.FunctionCall(call_id=call_id, name=kind, arguments=arguments)
+        )
+        chat_ctx.insert(
+            llm.FunctionCallOutput(
+                call_id=call_id, name=kind, output="", is_error=False
+            )
         )
     await under_test.update_chat_ctx(chat_ctx)

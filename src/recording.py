@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 async def start_recording(ctx: JobContext) -> None:
     if ctx.is_fake_job():
         return
-    bucket = getenv('AUDIO_RECORDING_BUCKET', '')
+    bucket = getenv("AUDIO_RECORDING_BUCKET", "")
     if not bucket:
-        logger.info('AUDIO_RECORDING_BUCKET not configured; audio recording disabled')
+        logger.info("AUDIO_RECORDING_BUCKET not configured; audio recording disabled")
         return
-    access_key = getenv('AWS_ACCESS_KEY_ID', '')
-    endpoint = getenv('S3_ENDPOINT_URL', '')
-    secret = getenv('AWS_SECRET_ACCESS_KEY', '')
+    access_key = getenv("AWS_ACCESS_KEY_ID", "")
+    endpoint = getenv("S3_ENDPOINT_URL", "")
+    secret = getenv("AWS_SECRET_ACCESS_KEY", "")
     if not access_key or not secret:
-        logger.error('Audio recording requires AWS credentials for the Egress service')
+        logger.error("Audio recording requires AWS credentials for the Egress service")
         return
 
     try:
@@ -32,25 +32,28 @@ async def start_recording(ctx: JobContext) -> None:
                 api.RoomCompositeEgressRequest(
                     room_name=ctx.room.name,
                     audio_only=True,
-                    file_outputs=[api.EncodedFileOutput(
-                        file_type=api.EncodedFileType.OGG,
-                        filepath=f"calls/{quote(ctx.room.name, safe='')}/audio.ogg",
-                        s3=api.S3Upload(
-                            bucket=bucket,
-                            endpoint=endpoint,
-                            force_path_style=bool(endpoint),
-                            region=getenv('AWS_REGION') or getenv('AWS_DEFAULT_REGION', ''),
-                            access_key=access_key,
-                            secret=secret,
-                            session_token=getenv('AWS_SESSION_TOKEN', ''),
-                        ),
-                    )],
+                    file_outputs=[
+                        api.EncodedFileOutput(
+                            file_type=api.EncodedFileType.OGG,
+                            filepath=f"calls/{quote(ctx.room.name, safe='')}/audio.ogg",
+                            s3=api.S3Upload(
+                                bucket=bucket,
+                                endpoint=endpoint,
+                                force_path_style=bool(endpoint),
+                                region=getenv("AWS_REGION")
+                                or getenv("AWS_DEFAULT_REGION", ""),
+                                access_key=access_key,
+                                secret=secret,
+                                session_token=getenv("AWS_SESSION_TOKEN", ""),
+                            ),
+                        )
+                    ],
                 )
             )
         if not info.egress_id:
-            raise RuntimeError('Egress response did not include a recording ID')
+            raise RuntimeError("Egress response did not include a recording ID")
     except Exception:
-        logger.error('Audio recording start failed; call will continue')
+        logger.error("Audio recording start failed; call will continue")
         return
 
     async def stop_recording() -> None:
@@ -62,6 +65,6 @@ async def start_recording(ctx: JobContext) -> None:
         except Exception:
             # Room deletion may already have stopped Egress. The backend tracks audio
             # readiness from storage events independently of this stop request.
-            logger.error('Audio recording stop request failed')
+            logger.error("Audio recording stop request failed")
 
     ctx.add_shutdown_callback(stop_recording)

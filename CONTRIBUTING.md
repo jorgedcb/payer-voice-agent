@@ -30,9 +30,17 @@ Run the same deterministic checks as CI:
 
 ```bash
 uv run --no-sync ruff check src/ test/
+uv run --no-sync ruff format --check src/ test/
 uv run --no-sync deptry .
 uv run --no-sync mypy src/
 uv run --no-sync pytest test/ --offline -q --tb=short -m "not quarantine"
+```
+
+To apply formatting and import sorting before checking:
+
+```bash
+uv run --no-sync ruff check --select I --fix src/ test/
+uv run --no-sync ruff format src/ test/
 ```
 
 Live behavior tests require `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and

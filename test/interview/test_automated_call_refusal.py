@@ -7,27 +7,34 @@ is no pushback: the goal is not to be taken for one, and a refusal is final.
 """
 
 import pytest
-
 from support.calls import replay, show_response
 
 PICKUP = [
-    ("user", "Thank you for calling provider services. My name is Dana. May I have your name, please?"),
+    (
+        "user",
+        "Thank you for calling provider services. My name is Dana. May I have your name, please?",
+    ),
     ("assistant", "Hi Dana, this is Greta, last initial s for sierra."),
 ]
 
 
 def called(result, name: str) -> bool:
-    return any(ev.type == "function_call" and ev.item.name == name for ev in result.events)
+    return any(
+        ev.type == "function_call" and ev.item.name == name for ev in result.events
+    )
 
 
-@pytest.mark.parametrize("refusal", [
-    "Alright. Thank you for calling provider services. At this time, we are not able to "
-    "service calls from automated systems. Please have someone from the provider's office "
-    "contact provider services.",
-    "Thank you so much. At this point, we are unable to take calls from virtual assistant "
-    "agents. Have a live representative give us a call, and we'll be more than happy to help.",
-    "For what I can hear, this one is a virtual assistant call, so I will proceed to disconnect.",
-])
+@pytest.mark.parametrize(
+    "refusal",
+    [
+        "Alright. Thank you for calling provider services. At this time, we are not able to "
+        "service calls from automated systems. Please have someone from the provider's office "
+        "contact provider services.",
+        "Thank you so much. At this point, we are unable to take calls from virtual assistant "
+        "agents. Have a live representative give us a call, and we'll be more than happy to help.",
+        "For what I can hear, this one is a virtual assistant call, so I will proceed to disconnect.",
+    ],
+)
 async def test_a_refusal_ends_the_call(session, start_assistant, refusal) -> None:
     agent = await start_assistant(caller_first_name="Greta", caller_last_initial="S")
     await replay(agent, PICKUP)
@@ -54,16 +61,21 @@ IDENTITY_CHECK = PICKUP + [
 ]
 
 
-@pytest.mark.parametrize("question", [
-    "Correct? Am I speaking with a live representative",
-    "Are you a live representative?",
-])
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Correct? Am I speaking with a live representative",
+        "Are you a live representative?",
+    ],
+)
 async def test_live_representative_question_gets_only_yes(
     session, start_assistant, question
 ) -> None:
     agent = await start_assistant(
-        caller_first_name="Greta", caller_last_initial="S",
-        callback_number="2025550123", facility_name="Example Physical Therapy",
+        caller_first_name="Greta",
+        caller_last_initial="S",
+        callback_number="2025550123",
+        facility_name="Example Physical Therapy",
         npi="1477583926",
     )
     await replay(agent, IDENTITY_CHECK)
@@ -76,11 +88,14 @@ async def test_live_representative_question_gets_only_yes(
     result.expect.no_more_events()
 
 
-@pytest.mark.parametrize("question", [
-    "Greta, are you a virtual assistant, or are you a human being?",
-    "Before we continue, am I speaking with a real person or an automated system?",
-    "Am I speaking with a live human representative?",
-])
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Greta, are you a virtual assistant, or are you a human being?",
+        "Before we continue, am I speaking with a real person or an automated system?",
+        "Am I speaking with a live human representative?",
+    ],
+)
 async def test_asked_if_ai_says_so_and_gives_a_reason_to_stay(
     session, start_assistant, llm, question
 ) -> None:

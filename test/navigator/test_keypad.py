@@ -22,16 +22,27 @@ def keypad(request):
 
 
 def call_context(publish):
-    return SimpleNamespace(session=SimpleNamespace(room_io=SimpleNamespace(
-        room=SimpleNamespace(local_participant=SimpleNamespace(publish_dtmf=publish))
-    )))
+    return SimpleNamespace(
+        session=SimpleNamespace(
+            room_io=SimpleNamespace(
+                room=SimpleNamespace(
+                    local_participant=SimpleNamespace(publish_dtmf=publish)
+                )
+            )
+        )
+    )
 
 
 async def test_successful_keypad_input_needs_no_model_followup(keypad):
     publish = AsyncMock()
     result = await keypad(call_context(publish), [DtmfEvent("2"), DtmfEvent("#")])
-    assert publish.await_args_list == [call(code=2, digit="2"), call(code=11, digit="#")]
-    assert result is None, "Successful keypad input must end without another model response."
+    assert publish.await_args_list == [
+        call(code=2, digit="2"),
+        call(code=11, digit="#"),
+    ]
+    assert result is None, (
+        "Successful keypad input must end without another model response."
+    )
 
 
 async def test_keypad_failure_is_returned_to_the_model(keypad):

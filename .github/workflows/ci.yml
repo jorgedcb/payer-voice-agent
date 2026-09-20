@@ -19,6 +19,7 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - run: uv run --no-sync ruff check src/ test/
+      - run: uv run --no-sync ruff format --check src/ test/
       # deptry: declared-vs-imported check; exemptions and their reasons live in pyproject [tool.deptry].
       - run: uv run --no-sync deptry .
   typecheck:

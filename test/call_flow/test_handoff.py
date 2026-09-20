@@ -5,6 +5,7 @@ passing unchanged once the navigator grows real IVR logic.
 """
 
 from support.calls import handoff_opening, show_response, turn_settings
+
 from interview import InterviewAgent
 
 REP_GREETING = (
@@ -13,7 +14,9 @@ REP_GREETING = (
 )
 
 
-async def test_rep_greeting_hands_off_to_interview(session, start_navigator, llm) -> None:
+async def test_rep_greeting_hands_off_to_interview(
+    session, start_navigator, llm
+) -> None:
     await start_navigator(caller_first_name="Greta", caller_last_initial="S")
 
     result = await session.run(user_input=REP_GREETING)
@@ -113,18 +116,24 @@ async def test_interview_does_not_reintroduce_after_its_opening(
     result = await session.run(user_input=follow_up)
     show_response(follow_up, result)
 
-    await result.expect.next_event().is_message(role="assistant").judge(
-        llm,
-        intent=(
-            "Confirms it is still on the line, in a sentence or two. Does not "
-            "introduce itself again with 'Hi, this is Greta', does not spell a last "
-            "initial, and does not restate that it is calling about benefits for a member."
-        ),
+    await (
+        result.expect.next_event()
+        .is_message(role="assistant")
+        .judge(
+            llm,
+            intent=(
+                "Confirms it is still on the line, in a sentence or two. Does not "
+                "introduce itself again with 'Hi, this is Greta', does not spell a last "
+                "initial, and does not restate that it is calling about benefits for a member."
+            ),
+        )
     )
     result.expect.no_more_events()
 
 
-async def test_interview_sees_what_the_rep_already_said(session, start_navigator) -> None:
+async def test_interview_sees_what_the_rep_already_said(
+    session, start_navigator
+) -> None:
     await start_navigator()
 
     await session.run(user_input=REP_GREETING)

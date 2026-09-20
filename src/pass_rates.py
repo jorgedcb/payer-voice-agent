@@ -76,7 +76,9 @@ def render(tallies: dict[str, Tally], minimum: float) -> tuple[str, bool]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("reports", nargs="+", type=Path)
-    parser.add_argument("--min", type=float, default=0.9, help="required pass rate, 0-1")
+    parser.add_argument(
+        "--min", type=float, default=0.9, help="required pass rate, 0-1"
+    )
     args = parser.parse_args(argv)
     table, below = render(tally(args.reports), args.min)
     print(table)

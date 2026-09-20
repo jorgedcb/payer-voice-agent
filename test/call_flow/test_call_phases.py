@@ -10,7 +10,6 @@ from unittest.mock import MagicMock
 import pytest
 from livekit.agents import llm
 from livekit.agents.llm.tool_context import get_fnc_tool_names
-
 from support.calls import (
     AETNA_CALL,
     AETNA_PATIENT,
@@ -20,6 +19,7 @@ from support.calls import (
     show_response,
     turn_settings,
 )
+
 from dispatch import sample_spec
 from interview import InterviewAgent
 from navigator import HOLD_TURN_HANDLING, MENU_TURN_HANDLING, HoldAgent, NavigatorAgent
@@ -41,7 +41,9 @@ def a_navigator() -> NavigatorAgent:
 
 def a_hold_agent() -> HoldAgent:
     return HoldAgent(
-        spec=sample_spec(), call_date=call_date_today(), llm_model=MagicMock(spec=llm.LLM)
+        spec=sample_spec(),
+        call_date=call_date_today(),
+        llm_model=MagicMock(spec=llm.LLM),
     )
 
 
@@ -112,11 +114,14 @@ async def test_a_transfer_announcement_moves_the_call_to_the_queue(
     assert isinstance(session.current_agent, HoldAgent)
 
 
-@pytest.mark.parametrize("still_the_menu", [
-    MENU,
-    "One moment, please. The patient is Rashid Amari. Correct?",
-    "For eligibility and benefits, press one. For claim status, press two.",
-])
+@pytest.mark.parametrize(
+    "still_the_menu",
+    [
+        MENU,
+        "One moment, please. The patient is Rashid Amari. Correct?",
+        "For eligibility and benefits, press one. For claim status, press two.",
+    ],
+)
 async def test_a_menu_still_asking_stays_in_the_menu(
     session, start_navigator, still_the_menu
 ) -> None:
@@ -130,12 +135,16 @@ async def test_a_menu_still_asking_stays_in_the_menu(
     assert isinstance(session.current_agent, NavigatorAgent)
 
 
-async def test_the_queue_runs_on_the_interviews_timing(session, start_navigator) -> None:
+async def test_the_queue_runs_on_the_interviews_timing(
+    session, start_navigator
+) -> None:
     navigator = await start_navigator(**AETNA_PATIENT)
     await replay(navigator, AETNA_CALL)
 
     endpointing, preemptive = turn_settings(session)
-    assert endpointing["min_delay"] == 1.5, "the menu waits out the pause between options"
+    assert endpointing["min_delay"] == 1.5, (
+        "the menu waits out the pause between options"
+    )
     assert preemptive is False
 
     await session.run(user_input=TRANSFER)
@@ -164,7 +173,9 @@ async def test_hold_music_in_the_queue_is_waited_out(session, start_navigator) -
     assert not called(result, "speak"), "never speak into hold music"
 
 
-async def test_a_menu_after_the_transfer_is_still_answered(session, start_navigator) -> None:
+async def test_a_menu_after_the_transfer_is_still_answered(
+    session, start_navigator
+) -> None:
     # The safety valve for calling the switch early: a line that announces a
     # transfer and then wants a value keeps every tool it had.
     navigator = await start_navigator(**AETNA_PATIENT)
@@ -176,11 +187,15 @@ async def test_a_menu_after_the_transfer_is_still_answered(session, start_naviga
     result = await session.run(user_input=relapse)
     show_response(relapse, result)
 
-    assert called(result, "speak") or called(result, "send_dtmf_events"), "the line asked again"
+    assert called(result, "speak") or called(result, "send_dtmf_events"), (
+        "the line asked again"
+    )
     assert not called(result, "representative_answered")
 
 
-async def test_the_queue_hands_off_when_a_person_picks_up(session, start_navigator) -> None:
+async def test_the_queue_hands_off_when_a_person_picks_up(
+    session, start_navigator
+) -> None:
     navigator = await start_navigator(**AETNA_PATIENT)
     await replay(navigator, AETNA_CALL)
     await session.run(user_input=TRANSFER)

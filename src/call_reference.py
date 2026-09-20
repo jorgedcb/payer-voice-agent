@@ -20,7 +20,14 @@ import re
 from dataclasses import dataclass
 from datetime import date
 
-from livekit.agents import NOT_GIVEN, AgentTask, NotGivenOr, ToolError, function_tool, llm
+from livekit.agents import (
+    NOT_GIVEN,
+    AgentTask,
+    NotGivenOr,
+    ToolError,
+    function_tool,
+    llm,
+)
 
 from dispatch import CallSpec
 from prompts import instructions
@@ -89,7 +96,7 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
         if not re.fullmatch(r"\S+( \S+)+", name):
             raise ToolError(
                 "Incomplete name: record the first name and the last initial together, "
-                "e.g. \"Jamie R\". Ask for whichever part is missing."
+                'e.g. "Jamie R". Ask for whichever part is missing.'
             )
         self._name = name
         logger.info("Representative name recorded")
@@ -106,12 +113,16 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
         """
         reference = reference.strip()
         if not reference:
-            raise ToolError("Empty reference. Ask the representative for the call reference.")
+            raise ToolError(
+                "Empty reference. Ask the representative for the call reference."
+            )
         self._current = reference
         # The confirm tool appears only now, so a confirmation cannot be claimed in
         # the same turn the value was heard: the read-back has to happen first.
         confirm = self._build_confirm_tool(reference)
-        await self.update_tools([t for t in self.tools if t.id != confirm.id] + [confirm])
+        await self.update_tools(
+            [t for t in self.tools if t.id != confirm.id] + [confirm]
+        )
         logger.info("Call reference recorded, awaiting confirmation")
         # The read-back is handed over spelled out, the way the prompt hands over
         # the NPI: asked to spell "AB73921" itself the model wrote "A, B, 7, 3, 9,
@@ -155,7 +166,9 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
             if not self.done():
                 logger.info("Call reference confirmed")
                 self.complete(
-                    CallReferenceResult(reference=reference, representative_name=self._name)
+                    CallReferenceResult(
+                        reference=reference, representative_name=self._name
+                    )
                 )
             return None
 
@@ -174,6 +187,8 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
             logger.info("Representative stated no reference is available")
             self.complete(
                 CallReferenceResult(
-                    reference=None, unavailable_statement=statement, representative_name=self._name
+                    reference=None,
+                    unavailable_statement=statement,
+                    representative_name=self._name,
                 )
             )

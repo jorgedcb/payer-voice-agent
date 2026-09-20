@@ -36,7 +36,10 @@ def test_rates_count_only_runs_where_the_test_ran(tmp_path: Path) -> None:
 
 
 def test_worst_first_and_threshold(tmp_path: Path) -> None:
-    runs = [junit(tmp_path / f"{i}.xml", {"a": "pass", "b": "fail" if i < 2 else "pass"}) for i in range(5)]
+    runs = [
+        junit(tmp_path / f"{i}.xml", {"a": "pass", "b": "fail" if i < 2 else "pass"})
+        for i in range(5)
+    ]
     table, below = render(tally(runs), minimum=0.9)
     assert below
     lines = table.splitlines()
@@ -79,7 +82,9 @@ def test_failure_message_cannot_break_the_table(tmp_path: Path) -> None:
     assert row.count("|") == 4, row
 
 
-def test_failure_message_is_shown_even_under_an_informational_floor(tmp_path: Path) -> None:
+def test_failure_message_is_shown_even_under_an_informational_floor(
+    tmp_path: Path,
+) -> None:
     run = junit(tmp_path / "1.xml", {"a": "fail"})
     table, below = render(tally([run]), minimum=0)
     assert not below
