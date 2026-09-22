@@ -36,8 +36,7 @@ def nato_spell(word: str) -> str:
     The letter is upper-cased so the voice reads it as a letter: lowercase "i"
     and "a" are words to a TTS model, and on a live call "A, n, n, i, e" came
     out unintelligible enough that the representative asked twice. "As in" is
-    what US representatives say (and what speak_code says); "S for sierra" was
-    among the phrasings on calls where the rep then asked if the caller was an AI.
+    what US representatives say, and what speak_code already says.
     """
     parts = [
         f"{ch.upper()} as in {NATO_ALPHABET[ch]}"
