@@ -41,7 +41,7 @@ async def test_representative_goodbye_during_transfer_does_not_start_closing(
     llm,
     farewell,
 ):
-    # Aetna call [call ID removed], at 4:41.
+    # An Aetna call on 2026-09-18, at 4:41.
     # Names and identifying details are synthetic. Keep the transfer notice and
     # goodbye in separate turns, as STT delivered them: the goodbye ends this
     # representative's part, while benefits verification still needs to happen.
