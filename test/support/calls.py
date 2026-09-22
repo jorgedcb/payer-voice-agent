@@ -134,6 +134,74 @@ AETNA_CALL = [
 # What STT wrote when the menu said "Rashid". The next turn on the real call.
 AETNA_READBACK = "One moment, please. The patient is Richard Amari. Correct?"
 
+# UnitedHealthcare provider line, 2026-09-22, up to the turn the virtual
+# assistant asked for the member ID. It is a speech-first system: every prompt
+# so far said what to say and none mentioned the keypad. The member ID is a
+# synthetic stand-in, numeric like the real one.
+UHC_PATIENT = {"member_id": "907264318"}
+
+# The operator notes that call carried.
+UHC_IVR_INSTRUCTIONS = (
+    "When they ask, “You need to hear that copay and coinsurance again,” say “no.”\n"
+    "When they ask, “Would you like to check another copay or therapy for this "
+    "member?” say “no.”\n"
+    "When they say, “If that’s all you need, you may hang up now,” respond with "
+    "“representative.”"
+)
+
+UHC_CALL = [
+    (
+        "user",
+        (
+            "UnitedHealthcare. Your call may be monitored or recorded for quality or "
+            "account security purposes. AI may assist. For quicker assistance, please "
+            "have your NPI or tax ID number ready. You may also be asked for the member "
+            "ID and date of birth. Having this information available will help you "
+            "access self-service options and connect with a representative more quickly."
+        ),
+    ),
+    ("wait", None),
+    ("user", "For English, just remain on the line."),
+    ("wait", None),
+    (
+        "user",
+        (
+            "I'm your virtual assistant at United Healthcare. If you're a member and "
+            "need help with your health plan, say I'm a member. Otherwise, in a few "
+            "words, tell me what are you calling about."
+        ),
+    ),
+    ("speak", "benefits and eligibility"),
+    ("user", "Are you calling as a health care professional?"),
+    ("speak", "yes"),
+    (
+        "user",
+        (
+            "Sure. What type of benefit are you calling about? You can say medical, "
+            "behavioral health, prescriptions, dental, or vision."
+        ),
+    ),
+    ("speak", "medical"),
+    (
+        "user",
+        (
+            "In order to connect you to the right advocate, please specify what type "
+            "of benefit you are calling about. You can say one of these options, "
+            "medical, behavioral health, prescriptions, dental, or vision. What type "
+            "of benefit are you calling about?"
+        ),
+    ),
+    ("speak", "medical"),
+    ("user", "Thanks."),
+    ("wait", None),
+]
+
+# The next turn on the real call. The agent spoke the ID and the system misheard
+# it twice, then failed the spoken NPI and tax ID the same way.
+UHC_MEMBER_ID_QUESTION = (
+    "Let's move forward with your benefit request. And what is the member ID?"
+)
+
 
 async def replay(under_test, history) -> None:
     """Seed the agent with a conversation exactly as the model would have seen it.

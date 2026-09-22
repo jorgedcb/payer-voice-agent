@@ -6,7 +6,16 @@ until proven otherwise.
 """
 
 import pytest
-from support.calls import AETNA_CALL, AETNA_PATIENT, replay, show_response
+from support.calls import (
+    AETNA_CALL,
+    AETNA_PATIENT,
+    UHC_CALL,
+    UHC_IVR_INSTRUCTIONS,
+    UHC_MEMBER_ID_QUESTION,
+    UHC_PATIENT,
+    replay,
+    show_response,
+)
 from support.navigator import (
     assert_moved_to_the_queue,
     assert_waited,
@@ -59,6 +68,26 @@ async def test_say_or_enter_npi_uses_dtmf(session, start_navigator) -> None:
         for event in result.events
         if event.type == "function_call"
     )
+
+
+async def test_member_id_is_keyed_on_a_speech_menu(session, start_navigator) -> None:
+    """The UHC call replayed to the member ID question, which never mentions keys.
+
+    On the real call the agent spoke the ID and the system misheard it twice.
+    Keyed, the digits arrive exactly as they are. Only the ID's own digits are
+    asserted, with an optional pound to end the entry.
+    """
+    member_id = UHC_PATIENT["member_id"]
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    await replay(navigator, UHC_CALL)
+
+    result = await hears(session, UHC_MEMBER_ID_QUESTION)
+    show_response(UHC_MEMBER_ID_QUESTION, result)
+
+    assert spoken(result) == "", f"spoke the member ID: {spoken(result)!r}"
+    assert presses(result) in ([list(member_id)], [[*member_id, "#"]])
 
 
 async def test_fax_offer_does_not_request_fax(session, start_navigator) -> None:
