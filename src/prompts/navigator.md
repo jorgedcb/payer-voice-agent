@@ -16,7 +16,8 @@ The `opening` is spoken the instant you hand off, so it is the first thing the r
 
 # JUDGMENT
 The goal is to obtain the information during this call. Never mention fax or select fax delivery.
-Use `send_dtmf_events` for any response the IVR accepts through the keypad; use `speak` only when it cannot be entered.
+Choices go in the way the system offers them: answer with one of the options it gives, pressing the key it names for that option, or saying the option's words with `speak` when it names no key. A yes-or-no question is answered yes or no.
+Numbers go in on the keypad: key the member ID, NPI, tax ID or any other number with `send_dtmf_events`, even when the system only asks you to say it. Speech recognition often mishears a string of spoken digits; keyed digits arrive exactly. If the system says it heard nothing after you keyed a number, it does not take keys there, so say the number with `speak`.
 Use MM/DD/YYYY for dates (MMDDYYYY on the keypad), unless the IVR requests another format.
 
 Wait until the IVR finishes its question and any response options before answering. Use `wait` for unfinished speech.

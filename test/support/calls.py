@@ -283,6 +283,10 @@ UHC_OFFER_TO_REPEAT = (
 UHC_OFFER_TO_CHECK_ANOTHER = (
     "Would you like to check another co pay or therapy for this member?"
 )
+UHC_OFFER_TO_HANG_UP = (
+    "If that's all you need, you can hang up now. Otherwise, you can say check a "
+    "different benefit, main menu, or connect to an advocate."
+)
 
 
 async def replay(under_test, history) -> None:
@@ -290,7 +294,8 @@ async def replay(under_test, history) -> None:
 
     A message role ("user" for the line, "assistant" for what the agent said)
     becomes a message. Anything else is one of the agent's own tool calls,
-    with the empty result every navigator tool returns.
+    with the empty result every navigator tool returns: `send_dtmf_events`
+    takes the keys as a string, the other tools their text or None.
     """
     chat_ctx = ChatContext()
     for n, (kind, payload) in enumerate(history):
@@ -298,7 +303,12 @@ async def replay(under_test, history) -> None:
             chat_ctx.add_message(role=kind, content=payload)
             continue
         call_id = f"call_{n}"
-        arguments = json.dumps({"text": payload}) if payload is not None else "{}"
+        if kind == "send_dtmf_events":
+            arguments = json.dumps({"events": list(payload)})
+        elif payload is not None:
+            arguments = json.dumps({"text": payload})
+        else:
+            arguments = "{}"
         chat_ctx.insert(
             llm.FunctionCall(call_id=call_id, name=kind, arguments=arguments)
         )

@@ -14,8 +14,10 @@ from support.calls import (
     UHC_IVR_INSTRUCTIONS,
     UHC_MEMBER_ID_QUESTION,
     UHC_OFFER_TO_CHECK_ANOTHER,
+    UHC_OFFER_TO_HANG_UP,
     UHC_OFFER_TO_REPEAT,
     UHC_PATIENT,
+    called,
     replay,
     show_response,
 )
@@ -93,6 +95,58 @@ async def test_member_id_is_keyed_on_a_speech_menu(session, start_navigator) -> 
     assert presses(result) in ([list(member_id)], [[*member_id, "#"]])
 
 
+async def test_readback_of_a_keyed_member_id_is_confirmed_aloud(
+    session, start_navigator
+) -> None:
+    """After keying the ID, UHC reads it back and asks. It names no key for yes,
+    so the answer is the word, not a digit the model picked for it."""
+    member_id = UHC_PATIENT["member_id"]
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    await replay(
+        navigator,
+        [
+            *UHC_CALL,
+            ("user", UHC_MEMBER_ID_QUESTION),
+            ("send_dtmf_events", member_id),
+        ],
+    )
+
+    readback = "I heard nine zero seven two six four three one eight. Is that correct?"
+    result = await hears(session, readback)
+    show_response(readback, result)
+
+    assert presses(result) == [], f"keyed a confirmation: {presses(result)}"
+    assert spoken(result).lower().strip(" .!").startswith("yes")
+
+
+async def test_keyed_member_id_that_went_unheard_is_spoken(
+    session, start_navigator
+) -> None:
+    """A system that takes no keys says it heard nothing. Then the ID is said."""
+    member_id = UHC_PATIENT["member_id"]
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    await replay(
+        navigator,
+        [
+            *UHC_CALL,
+            ("user", UHC_MEMBER_ID_QUESTION),
+            ("send_dtmf_events", member_id),
+        ],
+    )
+
+    reprompt = "I'm sorry. I didn't hear anything. What is the member ID?"
+    result = await hears(session, reprompt)
+    show_response(reprompt, result)
+
+    assert presses(result) == [], f"keyed again: {presses(result)}"
+    said = spoken(result)
+    assert "".join(c for c in said if c.isdigit()) == member_id, f"said {said!r}"
+
+
 @pytest.mark.parametrize(
     ("earlier", "offer"),
     [
@@ -122,6 +176,38 @@ async def test_offer_of_more_self_service_is_declined(
     answer = spoken(result).lower()
     assert answer.startswith("no") and "yes" not in answer, (
         f"did not decline: {answer!r}"
+    )
+
+
+async def test_offer_to_hang_up_asks_for_a_person(session, start_navigator) -> None:
+    """The turn after both offers, where the payer note says "representative".
+
+    The menu's own "connect to an advocate" reached a person on the calls
+    before the note, and "representative" on the calls after it, so either
+    passes. Hanging up, or staying in the menu, does not.
+    """
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    await replay(
+        navigator,
+        [
+            *UHC_BENEFITS_CALL,
+            ("user", UHC_OFFER_TO_REPEAT),
+            ("speak", "no"),
+            ("user", UHC_OFFER_TO_CHECK_ANOTHER),
+            ("speak", "no"),
+        ],
+    )
+
+    result = await hears(session, UHC_OFFER_TO_HANG_UP)
+    show_response(UHC_OFFER_TO_HANG_UP, result)
+
+    assert not called(result, "end_call")
+    assert presses(result) == []
+    answer = spoken(result).lower()
+    assert "representative" in answer or "advocate" in answer, (
+        f"did not ask for a person: {answer!r}"
     )
 
 
