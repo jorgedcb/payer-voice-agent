@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_TTS_VOICE_ID = "QTKSa2Iyv0yoxvXY2V8a"
 # eleven_flash_v2_5 is ElevenLabs' low-latency model (~75ms), on the standard
 # streaming websocket. It does not normalize numbers on its own, so the prompt
-# spells every identifier out as words (prompts/verification.md, SPEECH DELIVERY).
+# spells every identifier out as words (prompts/verification.md, Speech delivery).
 # eleven_v3_conversational was tried first and dropped: it runs on the newer
 # text-to-dialogue path and did not hold up on calls.
 TTS_MODEL = "eleven_flash_v2_5"

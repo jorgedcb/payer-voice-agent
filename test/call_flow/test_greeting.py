@@ -22,7 +22,7 @@ def test_prompt_gives_the_name_and_spelled_initial(prompt: str) -> None:
         prompt, spec(caller_first_name="Megan", caller_last_initial="R")
     )
     assert "Megan" in text
-    assert "R for romeo" in text
+    assert "R as in romeo" in text
 
 
 @pytest.mark.parametrize("prompt", NAMED_PROMPTS)
