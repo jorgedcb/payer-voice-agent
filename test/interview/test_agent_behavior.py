@@ -67,9 +67,10 @@ async def test_cpt_codes_turn_leaves_the_representative_something_to_do(
         intent=(
             "Gives the CPT codes 97110, 97112 and 97116 with digits spoken as "
             "words (a spoken range such as 'nine, seven, one, one, zero to nine, "
-            "seven, one, one, six' is acceptable) and says the place of service is "
-            "office, using singular grammar such as 'the place of service is', never "
-            "'the places of service are office'. The closing question, if any, is "
+            "seven, one, one, six' is acceptable) and says the visits are in the "
+            "office, in any natural phrasing ('in the office', 'the place of service "
+            "is office'), never the plural 'the places of service are office'. The "
+            "closing question, if any, is "
             "a check that they have the codes down, an offer to repeat, or the "
             "first benefits question — not several of these at once."
         ),
