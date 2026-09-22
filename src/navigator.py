@@ -178,10 +178,10 @@ class _PhoneSystemAgent(Agent):
 
     @function_tool()
     async def speak(self, text: str) -> None:
-        """Say these exact words into the line, for a menu that asks you to SAY something.
+        """Say these exact words into the line: a choice or an answer in words.
 
-        A menu that lists things to say and announces no keys is answered only
-        with this tool.
+        A choice the system names no key for is answered only with this tool.
+        Numbers are keyed instead, unless the system heard nothing when they were.
 
         Args:
             text: Only the words the menu asked for, e.g. "benefits and eligibility".
