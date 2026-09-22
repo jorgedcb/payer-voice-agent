@@ -9,9 +9,12 @@ import pytest
 from support.calls import (
     AETNA_CALL,
     AETNA_PATIENT,
+    UHC_BENEFITS_CALL,
     UHC_CALL,
     UHC_IVR_INSTRUCTIONS,
     UHC_MEMBER_ID_QUESTION,
+    UHC_OFFER_TO_CHECK_ANOTHER,
+    UHC_OFFER_TO_REPEAT,
     UHC_PATIENT,
     replay,
     show_response,
@@ -88,6 +91,38 @@ async def test_member_id_is_keyed_on_a_speech_menu(session, start_navigator) -> 
 
     assert spoken(result) == "", f"spoke the member ID: {spoken(result)!r}"
     assert presses(result) in ([list(member_id)], [[*member_id, "#"]])
+
+
+@pytest.mark.parametrize(
+    ("earlier", "offer"),
+    [
+        ([], UHC_OFFER_TO_REPEAT),
+        ([("user", UHC_OFFER_TO_REPEAT), ("speak", "no")], UHC_OFFER_TO_CHECK_ANOTHER),
+    ],
+    ids=["hear_again", "check_another"],
+)
+async def test_offer_of_more_self_service_is_declined(
+    session, start_navigator, earlier, offer
+) -> None:
+    """The UHC benefits readout, with no payer note saying how to answer.
+
+    Operators had written notes telling the agent to say "no" to both offers.
+    Declining should not need one: the job is a representative, and yes keeps
+    the call in the menu. Neither offer announces keys, so it is spoken.
+    """
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    await replay(navigator, [*UHC_BENEFITS_CALL, *earlier])
+
+    result = await hears(session, offer)
+    show_response(offer, result)
+
+    assert presses(result) == []
+    answer = spoken(result).lower()
+    assert answer.startswith("no") and "yes" not in answer, (
+        f"did not decline: {answer!r}"
+    )
 
 
 async def test_fax_offer_does_not_request_fax(session, start_navigator) -> None:
