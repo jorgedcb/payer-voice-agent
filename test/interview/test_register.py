@@ -24,7 +24,7 @@ UHC_PICKUP = [
 
 
 async def test_small_talk_gets_a_plain_reply(session, start_assistant, llm) -> None:
-    # UHC call [call ID removed], 2026-09-22. "I'm doing well, thank you. I appreciate
+    # A UHC call on 2026-09-22. "I'm doing well, thank you. I appreciate
     # your help." was followed by "Are you a virtual assistant AI? or a live human."
     agent = await start_assistant(caller_first_name="Annie", caller_last_initial="S")
     await replay(agent, UHC_PICKUP)
@@ -126,7 +126,7 @@ async def test_no_diagnosis_code_is_said_the_way_a_caller_says_it(
 async def test_provider_name_is_given_as_a_person_gives_it(
     session, start_assistant, llm
 ) -> None:
-    # Call [call ID removed], 2026-09-21: "It is Northgate Sports Physical Therapy."
+    # A UHC call on 2026-09-21: "It is <the clinic's name>."
     # then "The NPI number is, ..." and the rep asked "Are you a virtual assistant
     # or virtual representative?"
     agent = await start_assistant(
