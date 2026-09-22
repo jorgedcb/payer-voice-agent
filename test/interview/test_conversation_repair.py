@@ -1,9 +1,8 @@
-"""Replay two bad turns from call [call ID removed].
+"""Replay two bad turns from a behavioral health line, 2026-09-18.
 
-Langfuse generations [trace ID removed] and [trace ID removed] both used
-openai/gpt-4.1. Preserve the STT fragments and interrupted assistant speech
-the model actually received, with a synthetic callback number and the normal
-sample call spec. Use the current production prompt, not a frozen trace prompt,
+Both turns ran on openai/gpt-4.1. Preserve the STT fragments and interrupted
+assistant speech the model actually received, with a synthetic callback number
+and the normal sample call spec. Use the current production prompt, not a frozen trace prompt,
 so these tests measure future fixes too.
 
 These are text/model regressions, not audio/STT reproductions. The caller

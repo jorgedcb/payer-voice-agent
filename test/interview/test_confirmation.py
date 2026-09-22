@@ -1,8 +1,8 @@
-"""Confirmation regressions from [call ID removed].
+"""Confirmation regressions from a behavioral health line, 2026-09-18.
 
 At 3:06 the caller echoed a correct callback read-back; the representative then
 announced a robocall disconnect.
-Langfuse generation [trace ID removed] used openai/gpt-4.1. Test the failure
+That turn ran on openai/gpt-4.1. Test the failure
 class with an entirely synthetic conversation and the current production prompt.
 These measure text/model behavior, not audio delivery or hang-up rates.
 """
@@ -11,7 +11,7 @@ import pytest
 from support.calls import replay, show_response
 
 # Entirely synthetic conversation; no private transcript or patient data is sent
-# to inference. The real Langfuse generation above identifies the failure only.
+# to inference. The real call above identifies the failure only.
 HISTORY = [
     ("user", "For provider services, press one."),
     ("user", "Please hold for the next available representative."),
