@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 # Default voice when a dispatch does not select one.
 DEFAULT_TTS_VOICE_ID = "QTKSa2Iyv0yoxvXY2V8a"
 # Use the streaming Flash model for low latency. It does not normalize numbers
-# on its own, so prompts spell identifiers as words (verification.md, SPEECH DELIVERY).
+# on its own, so prompts spell identifiers as words (prompts/verification.md,
+# Speech delivery).
 # Model and listening history: docs/decisions.md#voice-and-spoken-identifiers.
 TTS_MODEL = "eleven_flash_v2_5"
 

@@ -108,10 +108,13 @@ def test_invalid_payload_is_not_replaced_by_sample_data(data):
         prepare(data)
 
 
-def test_missing_diagnosis_does_not_invent_a_code():
+def test_missing_diagnosis_is_a_fact_not_a_sentence_to_recite():
+    # "The verification concerns general benefits." was recited word for word on
+    # a live call and the representative asked whether they were talking to a human.
     spec = prepare(payload(dx_code=""))
     rendered = prompts.instructions("verification", spec)
-    assert "The verification concerns general benefits." in rendered
+    assert "The verification concerns general benefits." not in rendered
+    assert "no diagnosis code" in rendered.lower()
 
 
 async def test_handoff_uses_the_same_spec_with_phase_specific_formatting():
@@ -225,5 +228,6 @@ def test_sample_loads_from_another_directory(monkeypatch, tmp_path):
 def test_interview_preserves_complete_procedure_codes(codes, spoken):
     spec = prepare(payload(cpt_codes=codes))
     rendered = prompts.instructions("verification", spec)
-    assert f"The CPT codes are, {spoken}. The places of service" in rendered
+    assert f"CPT codes: {spoken}." in rendered
+    assert "office and home" in rendered
     assert spec.cpt_codes == codes

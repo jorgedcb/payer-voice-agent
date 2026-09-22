@@ -31,13 +31,13 @@ NATO_ALPHABET: dict[str, str] = {
 
 
 def nato_spell(word: str) -> str:
-    """ "c" -> "C for charlie"; "abc" -> "A for alpha, B for bravo, C for charlie".
+    """ "c" -> "C as in charlie"; "abc" -> "A as in alpha, B as in bravo, C as in charlie".
 
     The letter is upper-cased so the voice reads it as a letter: lowercase "i"
     and "a" are words to a TTS model. NATO words make the letters unambiguous.
     """
     parts = [
-        f"{ch.upper()} for {NATO_ALPHABET[ch]}"
+        f"{ch.upper()} as in {NATO_ALPHABET[ch]}"
         for ch in word.lower()
         if ch in NATO_ALPHABET
     ]

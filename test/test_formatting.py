@@ -36,9 +36,11 @@ def test_nato_spell_reads_every_letter_as_a_letter() -> None:
     # On a live call the agent said "A, n, n, i, e" and the representative asked twice.
     assert (
         nato_spell("Annie")
-        == "A for alpha, N for november, N for november, I for india, E for echo"
+        == "A as in alpha, N as in november, N as in november, I as in india, E as in echo"
     )
-    assert nato_spell("S") == "S for sierra"
+    # "as in" is how US reps say it and what speak_code already says; "S for
+    # sierra" was one of the phrasings that got the caller asked if it was an AI.
+    assert nato_spell("S") == "S as in sierra"
 
 
 def test_npi_reads_in_three_groups_with_commas() -> None:
