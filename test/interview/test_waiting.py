@@ -65,6 +65,9 @@ async def test_yields_when_no_response_is_needed(session, start_assistant, llm, 
             "Can I place you on hold a little longer?",
             "Briefly agrees to remain on hold.",
             id="hold-permission",
+            # 2026-09-22: agrees and also calls wait in the same turn, 1 in 5 to
+            # 1 in 10 runs locally and on two of three CI runs; measured nightly.
+            marks=pytest.mark.quarantine,
         ),
         pytest.param(
             "Thanks for holding. The provider is in network. What benefits do you need?",
