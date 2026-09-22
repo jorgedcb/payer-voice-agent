@@ -225,5 +225,5 @@ def test_sample_loads_from_another_directory(monkeypatch, tmp_path):
 def test_interview_preserves_complete_procedure_codes(codes, spoken):
     spec = prepare(payload(cpt_codes=codes))
     rendered = prompts.instructions("verification", spec)
-    assert f"The CPT codes are, {spoken}. The places of service" in rendered
+    assert f"CPT codes: {spoken}. Place of service: office and home." in rendered
     assert spec.cpt_codes == codes
