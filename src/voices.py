@@ -9,23 +9,16 @@ from livekit.plugins import elevenlabs
 logger = logging.getLogger(__name__)
 
 
-# The voice Jorge picked by ear for the ElevenLabs switch.
+# Default voice when a dispatch does not select one.
 DEFAULT_TTS_VOICE_ID = "QTKSa2Iyv0yoxvXY2V8a"
-# eleven_flash_v2_5 is ElevenLabs' low-latency model (~75ms), on the standard
-# streaming websocket. It does not normalize numbers on its own, so the prompt
-# spells every identifier out as words (prompts/verification.md, Speech delivery).
-# eleven_v3_conversational was tried first and dropped: it runs on the newer
-# text-to-dialogue path and did not hold up on calls.
+# Use the streaming Flash model for low latency. It does not normalize numbers
+# on its own, so prompts spell identifiers as words (prompts/verification.md,
+# Speech delivery).
+# Model and listening history: docs/decisions.md#voice-and-spoken-identifiers.
 TTS_MODEL = "eleven_flash_v2_5"
 
-# Pinned, not inherited. Without these the plugin opens the websocket with an
-# empty voice_settings object, and whether ElevenLabs then applies the voice's
-# stored settings or its platform defaults is undocumented; the playground with
-# settings unset applies the stored ones, so the two never sounded alike. These
-# are the stored settings for the default voice with stability raised from
-# 0.55: the read on calls came out excited on short sentences ("Certainly."),
-# and stability is ElevenLabs' lever for that. Set the same values in the
-# playground to reproduce a call.
+# Pin settings so calls do not depend on inherited provider defaults. Stability
+# keeps short replies even; use these same values for playground comparisons.
 TTS_VOICE_SETTINGS = elevenlabs.VoiceSettings(
     stability=0.7, similarity_boost=0.4, style=0.0, speed=1.02, use_speaker_boost=True
 )
@@ -34,12 +27,8 @@ TTS_VOICE_SETTINGS = elevenlabs.VoiceSettings(
 def tts_chain(voice_id: str | None = None) -> list[tts.TTS]:
     """The TTS fallback chain, primary first.
 
-    ElevenLabs left LiveKit Inference, so it runs on our own account and its
-    constructor raises when ELEVEN_API_KEY is missing. That raise lands inside
-    the job, before the session exists: it would fail every dispatched call
-    without a word spoken, and the two fallbacks behind it -- the reason this is
-    a chain at all -- would never be reached. A missing key drops the voice and
-    says so in the log instead.
+    The direct ElevenLabs plugin requires ELEVEN_API_KEY at construction, before
+    fallback can run. Skip it when the key is absent so the call can use xAI.
 
     ElevenLabs is not covered by LiveKit's HIPAA BAA; the two behind it are, on
     other vendors.

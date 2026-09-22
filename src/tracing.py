@@ -18,8 +18,7 @@ class _SessionIdSpanProcessor(SpanProcessor):
 
     ``set_tracer_provider(metadata=...)`` cannot do this: inside a job LiveKit's own
     metadata processor stamps its job attributes and returns without applying the
-    caller's metadata, so Langfuse fell back to ``gen_ai.conversation.id`` -- the
-    room SID -- and the call was unsearchable by its ``vc-`` id.
+    caller's metadata. This processor preserves lookup by the call's ``vc-`` id.
     """
 
     def __init__(self, session_id: str) -> None:
@@ -36,8 +35,7 @@ def setup_langfuse(session_id: str) -> TracerProvider | None:
 
     ``session_id`` (the room name) becomes the Langfuse session for every span, so
     a call can be found by its ``vc-`` id. Returns None when the keys aren't
-    configured, so console mode and local runs behave exactly as before -- tracing
-    stays inert until the secrets exist.
+    configured, so tracing stays inert until the secrets exist.
 
     Note what these spans carry: lk.pii.instructions is the fully rendered prompt
     (member name, DOB, member ID, NPI) and lk.pii.user_transcript is everything

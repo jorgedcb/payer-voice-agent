@@ -1,8 +1,7 @@
 """Close the call: the representative's name, then the call reference.
 
-The reference is the proof a verification happened, and prompt rules alone let
-the interview model hang up on a goodbye about one turn in five. So ending the
-call runs this task first (see InterviewAgent.end_call): it takes the floor,
+Ending the call runs this task first (see InterviewAgent.end_call) so reference
+collection is enforced before shutdown. It takes the floor,
 gets the representative's name and the reference, reads the reference back,
 and returns only once the representative confirms it or explicitly says none
 can be provided.
@@ -124,13 +123,9 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
             [t for t in self.tools if t.id != confirm.id] + [confirm]
         )
         logger.info("Call reference recorded, awaiting confirmation")
-        # The read-back is handed over spelled out, the way the prompt hands over
-        # the NPI: asked to spell "AB73921" itself the model wrote "A, B, 7, 3, 9,
-        # 2, 1" on every measured run, numerals and bare letters, whatever the
-        # prompt said about pacing. A composed reference (a name and a date) is
-        # read as words, so it gets the rule instead of a spelling. It is told by
-        # the date: a code the representative spelled in groups ("AB 73921") has
-        # spaces too, and must still come back spelled.
+        # Supply code spelling directly so the voice gets digit words and NATO
+        # letters. A composed name/date reference is read naturally; detect it by
+        # its date because grouped codes can also contain spaces.
         if _COMPOSED_DATE.search(reference):
             read_back = (
                 "Read it back with the name said naturally and the date with the month "
