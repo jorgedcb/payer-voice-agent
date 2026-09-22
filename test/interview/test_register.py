@@ -155,10 +155,10 @@ async def test_provider_name_is_given_as_a_person_gives_it(
     await spoken.judge(
         llm,
         intent=(
-            "Gives the provider name, Northgate Sports Physical Therapy, the way "
-            "a person answers on the phone: the name on its own, or 'It's ...', or "
-            "'I'm calling from ...'. It gives nothing the representative did not ask "
-            "for, and it is not a stiff frame such as 'It is <name>.'"
+            "Gives the provider name, Northgate Sports Physical Therapy, and "
+            "nothing the representative did not ask for. Any natural spoken phrasing "
+            "is fine: the name on its own, 'It's ...', 'The provider is ...', 'I'm "
+            "calling from ...'."
         ),
     )
     result.expect.no_more_events()
