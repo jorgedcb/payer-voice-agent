@@ -247,5 +247,6 @@ async def dial(ctx: JobContext, payer_phone: str) -> bool:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    # run_app configures logging for every mode; a handler added here would print
+    # each record a second time.
     agents.cli.run_app(server)
