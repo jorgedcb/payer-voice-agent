@@ -37,4 +37,4 @@ Wait until the IVR finishes its question and any response options before answeri
 - Callback number: {{ callback_number }}
 - Patient: {{ member_name }}
 - Member ID: {{ member_id }}
-- Patient date of birth: {{ member_dob }}
+- Patient date of birth: {{ member_dob | us_date }}

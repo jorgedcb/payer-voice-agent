@@ -10,7 +10,20 @@ from prompts.formatting import (
     speak_npi,
     speak_phone,
     speak_tax_id,
+    us_date,
 )
+
+
+@pytest.mark.parametrize(
+    ("raw", "shown"), [("1990-01-23", "01/23/1990"), ("2000-09-16", "09/16/2000")]
+)
+def test_an_iso_date_is_shown_month_first(raw: str, shown: str) -> None:
+    assert us_date(raw) == shown
+
+
+@pytest.mark.parametrize("raw", ["01/23/1990", "Jan 23 1990", "1990-02-30", ""])
+def test_anything_else_is_shown_as_sent(raw: str) -> None:
+    assert us_date(raw) == raw
 
 
 @pytest.mark.parametrize(
