@@ -62,9 +62,32 @@ async def start_recording(ctx: JobContext) -> None:
                 await ctx.api.egress.stop_egress(
                     api.StopEgressRequest(egress_id=info.egress_id)
                 )
+        except api.TwirpError as exc:
+            if exc.code != api.TwirpErrorCode.FAILED_PRECONDITION:
+                logger.error("Audio recording stop request failed: %s", exc.code)
+                return
+            # Deleting the room ends Egress on its own, so on most calls the recording
+            # has finished before this runs. Only an ending that lost audio is an error.
+            # The backend tracks audio readiness from storage events either way.
+            await _check_ended_recording(ctx, info.egress_id)
         except Exception:
-            # Room deletion may already have stopped Egress. The backend tracks audio
-            # readiness from storage events independently of this stop request.
             logger.error("Audio recording stop request failed")
 
     ctx.add_shutdown_callback(stop_recording)
+
+
+async def _check_ended_recording(ctx: JobContext, egress_id: str) -> None:
+    try:
+        async with asyncio.timeout(10):
+            listed = await ctx.api.egress.list_egress(
+                api.ListEgressRequest(egress_id=egress_id)
+            )
+    except Exception:
+        logger.error("Audio recording status check failed")
+        return
+    if not listed.items:
+        logger.error("Audio recording status check found no recording")
+        return
+    status = listed.items[0].status
+    if status not in (api.EgressStatus.EGRESS_COMPLETE, api.EgressStatus.EGRESS_ENDING):
+        logger.error("Audio recording ended as %s", api.EgressStatus.Name(status))
