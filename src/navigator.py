@@ -110,11 +110,12 @@ class _PhoneSystemAgent(Agent):
         # llm_model exists for the tests, which run against one model at a time
         # rather than the fallback pair.
         #
-        # The prompt carries the values as the dispatcher sends them, nothing
-        # derived. How a menu takes a value is a fact about the payer, not the
-        # value: one line wants the member ID without its letter, another wants
-        # the letter keyed as a digit, a third wants it spoken. A human caller
-        # decides that per line, and so does the model, helped by
+        # The prompt carries the values as the dispatcher sends them, except the
+        # date of birth, shown in the MM/DD/YYYY order the prompt asks for.
+        # Nothing else is derived. How a menu takes a value is a fact about the
+        # payer, not the value: one line wants the member ID without its letter,
+        # another wants the letter keyed as a digit, a third wants it spoken. A
+        # human caller decides that per line, and so does the model, helped by
         # `ivr_instructions` -- operator notes about a known payer that the
         # dispatcher sends and the prompt renders when present.
         # The SDK's own hang-up, the same one the interview uses. end_instructions

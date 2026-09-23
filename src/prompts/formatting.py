@@ -1,5 +1,7 @@
 """Spoken identity, procedure-code and service formatting for the prompts."""
 
+from datetime import date
+
 NATO_ALPHABET: dict[str, str] = {
     "a": "alpha",
     "b": "bravo",
@@ -197,3 +199,17 @@ _SERVICE_LABELS = {
 def service_label(service_type: str) -> str:
     """Say the service's name without changing its exact backend identity."""
     return _SERVICE_LABELS[service_type]
+
+
+def us_date(s: str) -> str:
+    """ "1990-01-23" -> "01/23/1990", the month-first order US phone menus ask for.
+
+    The navigator keys a date as MMDDYYYY. Left to reorder an ISO date itself, the
+    model sometimes keyed the right month and the wrong day; given the date in that
+    order, keying it is only dropping the slashes. Anything that is not an ISO date
+    is shown as sent.
+    """
+    try:
+        return date.fromisoformat(s).strftime("%m/%d/%Y")
+    except ValueError:
+        return s

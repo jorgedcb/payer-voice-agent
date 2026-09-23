@@ -27,7 +27,7 @@ async def test_backend_payload_renders_both_agents():
     nav = prompts.instructions("navigator", spec)
     interview = prompts.instructions("verification", spec, call_date=date(2026, 9, 9))
     assert "W123456789" in nav
-    assert "1990-01-01" in nav
+    assert "Patient date of birth: 01/01/1990" in nav
     assert (
         "W as in whiskey, one, two, three, four, five, six, seven, eight, nine"
         in interview

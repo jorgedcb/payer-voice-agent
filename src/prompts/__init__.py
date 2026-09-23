@@ -20,6 +20,7 @@ from .formatting import (
     speak_phone,
     speak_places,
     speak_tax_id,
+    us_date,
 )
 
 END_CALL_DESCRIPTION = "Collect the call reference or confirm none is available, then say goodbye and disconnect."
@@ -57,6 +58,7 @@ _env.filters.update(
     speak_tax_id=speak_tax_id,
     speak_places=speak_places,
     service_label=service_label,
+    us_date=us_date,
 )
 _env.globals.update(disclosure=DISCLOSURE)
 
