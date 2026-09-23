@@ -1,3 +1,4 @@
+import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -83,6 +84,74 @@ async def test_recording_errors_are_contained(recording_ctx, caplog, phase):
     for callback in ctx.callbacks:
         await callback()
     assert "recording" in caplog.text.lower()
+    assert "sensitive" not in caplog.text
+
+
+def _already_ended(ctx, status):
+    # What LiveKit returns when the room's deletion ended Egress before the stop.
+    ctx.api.egress.stop_egress.side_effect = api.TwirpError(
+        api.TwirpErrorCode.FAILED_PRECONDITION,
+        "egress cannot be stopped",
+        status=412,
+    )
+    ctx.api.egress.list_egress.return_value = api.ListEgressResponse(
+        items=[api.EgressInfo(egress_id="EG_test", status=status)]
+    )
+
+
+@pytest.mark.parametrize(
+    "status", [api.EgressStatus.EGRESS_COMPLETE, api.EgressStatus.EGRESS_ENDING]
+)
+async def test_recording_ended_with_the_room_is_not_an_error(
+    recording_ctx, caplog, status
+):
+    ctx = recording_ctx
+    _already_ended(ctx, status)
+    await start_recording(ctx)
+    await ctx.callbacks[0]()
+    request = ctx.api.egress.list_egress.call_args.args[0]
+    assert request.egress_id == "EG_test"
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR]
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        api.EgressStatus.EGRESS_FAILED,
+        api.EgressStatus.EGRESS_ABORTED,
+        api.EgressStatus.EGRESS_LIMIT_REACHED,
+    ],
+)
+async def test_recording_that_ended_badly_is_an_error(recording_ctx, caplog, status):
+    ctx = recording_ctx
+    _already_ended(ctx, status)
+    await start_recording(ctx)
+    await ctx.callbacks[0]()
+    (record,) = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert api.EgressStatus.Name(status) in record.getMessage()
+
+
+async def test_recording_stop_error_names_the_api_code(recording_ctx, caplog):
+    ctx = recording_ctx
+    ctx.api.egress.stop_egress.side_effect = api.TwirpError(
+        api.TwirpErrorCode.UNAVAILABLE, "sensitive details", status=503
+    )
+    await start_recording(ctx)
+    await ctx.callbacks[0]()
+    (record,) = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert "unavailable" in record.getMessage()
+    assert "sensitive" not in caplog.text
+    ctx.api.egress.list_egress.assert_not_awaited()
+
+
+async def test_recording_status_check_errors_are_contained(recording_ctx, caplog):
+    ctx = recording_ctx
+    _already_ended(ctx, api.EgressStatus.EGRESS_COMPLETE)
+    ctx.api.egress.list_egress.side_effect = RuntimeError("sensitive details")
+    await start_recording(ctx)
+    await ctx.callbacks[0]()
+    (record,) = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert "recording" in record.getMessage().lower()
     assert "sensitive" not in caplog.text
 
 
