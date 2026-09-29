@@ -11,6 +11,7 @@
   "member_id": "W123456789",
   "member_name": "Sample Member",
   "member_dob": "1990-01-01",
+  "member_zip": "78701",
   "cpt_codes": [
     "97110",
     "97112"

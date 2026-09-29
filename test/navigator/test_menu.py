@@ -9,6 +9,9 @@ import pytest
 from support.calls import (
     AETNA_CALL,
     AETNA_PATIENT,
+    BCBSM_CALL,
+    BCBSM_PATIENT,
+    BCBSM_ZIP_QUESTION,
     UHC_BENEFITS_CALL,
     UHC_CALL,
     UHC_IVR_INSTRUCTIONS,
@@ -302,6 +305,20 @@ async def test_enter_date_of_birth(session, start_navigator) -> None:
     )
 
     assert presses(result) == [list("01231990")]
+
+
+async def test_member_zip_is_keyed_when_the_menu_asks(session, start_navigator) -> None:
+    """The BCBS Michigan call replayed to the ZIP question. That call carried no
+    ZIP, so the agent keyed five zeros and the menu hung up."""
+    zip_code = BCBSM_PATIENT["member_zip"]
+    navigator = await start_navigator(**BCBSM_PATIENT)
+    await replay(navigator, BCBSM_CALL)
+
+    result = await hears(session, BCBSM_ZIP_QUESTION)
+    show_response(BCBSM_ZIP_QUESTION, result)
+
+    assert spoken(result) == "", f"spoke the ZIP: {spoken(result)!r}"
+    assert presses(result) in ([list(zip_code)], [[*zip_code, "#"]])
 
 
 async def test_spoken_menu_is_answered_with_the_menu_words(
