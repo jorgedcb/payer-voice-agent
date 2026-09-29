@@ -288,6 +288,136 @@ UHC_OFFER_TO_HANG_UP = (
     "different benefit, main menu, or connect to an advocate."
 )
 
+# Blue Cross Blue Shield of Michigan provider line, 2026-09-28, up to the turn
+# the menu asked for the member's ZIP code. The call carried no ZIP: the agent
+# said it had none, then keyed five zeros, and the menu read the contract status
+# and hung up. The identifiers are synthetic stand-ins.
+BCBSM_PATIENT = {
+    "member_name": "Marisol Ortega",
+    "member_id": "ZZB712408356",
+    "member_dob": "1981-03-17",
+    "member_zip": "49503",
+    "npi": "1629384750",
+}
+
+BCBSM_CALL = [
+    (
+        "user",
+        (
+            "Hello. You've reached Blue Cross Blue Shield of Michigan and Blue Care "
+            "Network. If you bill on a CMS fifteen hundred claim form, say professional. "
+            "If you bill on a u b zero four claim form, say facility. You can also say "
+            "dental, vision, or hearing."
+        ),
+    ),
+    ("speak", "professional"),
+    (
+        "user",
+        (
+            "If you're currently... sorry. If you're currently billing on a CMS fifteen "
+            "hundred, say professional or press one. If you're billing on a u b zero "
+            "four, say facility or press two. You can also say dental or press three, "
+            "vision or press four, or hearing or press five."
+        ),
+    ),
+    ("send_dtmf_events", "1"),
+    (
+        "user",
+        (
+            "Please tell me the reason for your call. You can say claims or eligibility "
+            "and benefits."
+        ),
+    ),
+    ("speak", "eligibility and benefits"),
+    (
+        "user",
+        (
+            "Now, please tell me your national provider identifier or provider "
+            "identification number. If it's completely numeric, you may enter it on "
+            "your telephone keypad. You can also say, I don't have one."
+        ),
+    ),
+    ("send_dtmf_events", "1629384750"),
+    ("user", "That's one six two nine three eight four seven five zero. Right?"),
+    ("speak", "yes"),
+    (
+        "user",
+        (
+            "One moment while I verify that national provider identifier. Please note "
+            "that the information stated is based on finalized claims data and is not a "
+            "guarantee of payment. Payment will be based on medical necessity, provider "
+            "participation, and specialty, network status, procedure code, and diagnosis "
+            "billed. Next, I need to know the type of professional services you provide. "
+            "Please tell me your specialty when you hear it. You can say women's health, "
+            "mental health services, general practice, podiatry, chiropractic services, "
+            "durable medical equipment, or prosthetic and orthotic devices, ambulance, "
+            "pediatrics, or say other services. To hear that list again, say repeat. "
+            "Otherwise, tell me your specialty."
+        ),
+    ),
+    ("speak", "other services"),
+    ("user", "You said other services. Right?"),
+    ("speak", "yes"),
+    (
+        "user",
+        (
+            "Alright. For verification purposes, please tell me the numeric portion of "
+            "the member's contract number."
+        ),
+    ),
+    ("speak", "7 1 2 4 0 8 3 5 6"),
+    ("user", "Sorry. Please say the numeric portion of the member's contract number."),
+    ("speak", "7 1 2 4 0 8 3 5 6"),
+    (
+        "user",
+        (
+            "I still didn't understand. Ignoring all of the letters in the beginning, "
+            "please say the numeric portion of the member's contract number."
+        ),
+    ),
+    ("speak", "seven one two four zero eight three five six"),
+    ("user", "That's seven one two four zero eight three five six. Is that right?"),
+    ("speak", "yes"),
+    (
+        "user",
+        (
+            "Thank you. One moment, please. Now tell me the member's date of birth, "
+            "including the year."
+        ),
+    ),
+    ("send_dtmf_events", "03171981"),
+    ("user", "For exam..."),
+    ("wait", None),
+    (
+        "user",
+        "Thanks. Next, spell up to the first five letters of the member's first name.",
+    ),
+    ("speak", "M A R I S"),
+    (
+        "user",
+        (
+            "Sorry. Please spell up to the first five letters of the member's first "
+            "name. For example, Samantha would be spelled s a m a n."
+        ),
+    ),
+    ("speak", "M A R I S"),
+    (
+        "user",
+        (
+            "I still didn't understand. Please spell up to the first five letters of the "
+            "member's first name. For example, George would be spelled g e o r g."
+        ),
+    ),
+    (
+        "speak",
+        "M as in mike, A as in alpha, R as in romeo, I as in india, S as in sierra",
+    ),
+    ("user", "You said m a r i s. Is that right?"),
+    ("speak", "yes"),
+]
+
+BCBSM_ZIP_QUESTION = "Please say or enter the member's five digit ZIP code."
+
 
 async def replay(under_test, history) -> None:
     """Seed the agent with a conversation exactly as the model would have seen it.

@@ -108,6 +108,23 @@ def test_invalid_payload_is_not_replaced_by_sample_data(data):
         prepare(data)
 
 
+def test_member_zip_reaches_the_navigator_only_when_sent():
+    assert "Patient ZIP code: 78701" in prompts.instructions(
+        "navigator", prepare(payload())
+    )
+    for missing in (None, "", "  "):
+        rendered = prompts.instructions(
+            "navigator", prepare(payload(member_zip=missing))
+        )
+        assert "ZIP" not in rendered
+
+
+@pytest.mark.parametrize("zip_code", ["7870", "787011", "78701-1234", "7870A"])
+def test_member_zip_must_be_five_digits(zip_code):
+    with pytest.raises(ValueError, match="member_zip must be five digits"):
+        prepare(payload(member_zip=zip_code))
+
+
 def test_missing_diagnosis_is_a_fact_not_a_sentence_to_recite():
     # "The verification concerns general benefits." was recited word for word on
     # a live call and the representative asked whether they were talking to a human.

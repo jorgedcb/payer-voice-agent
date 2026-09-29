@@ -38,3 +38,6 @@ Wait until the IVR finishes its question and any response options before answeri
 - Patient: {{ member_name }}
 - Member ID: {{ member_id }}
 - Patient date of birth: {{ member_dob | us_date }}
+{% if member_zip -%}
+- Patient ZIP code: {{ member_zip }}
+{% endif -%}

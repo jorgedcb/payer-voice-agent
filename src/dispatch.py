@@ -29,6 +29,9 @@ class CallSpec(BaseModel):
     member_id: str
     member_name: str
     member_dob: str
+    # Five digits. Some menus (BCBS Michigan) authenticate the member with it and
+    # end the call without it.
+    member_zip: str | None = None
     ivr_instructions: str | None = None
     cpt_codes: list[str]
     dx_code: str
@@ -63,6 +66,18 @@ class CallSpec(BaseModel):
         value = value.strip()
         if not re.fullmatch(r"[A-Za-z]", value):
             raise ValueError("caller_last_initial must be a single letter A-Z")
+        return value
+
+    @field_validator("member_zip")
+    @classmethod
+    def _five_digit_zip(cls, value: str | None) -> str | None:
+        """Five digits or nothing: the navigator keys it, and a menu asking for
+        the member's ZIP wants exactly five."""
+        if value is None or not value.strip():
+            return None
+        value = value.strip()
+        if not re.fullmatch(r"\d{5}", value):
+            raise ValueError("member_zip must be five digits")
         return value
 
 
