@@ -9,6 +9,7 @@ from prompts.formatting import (
     speak_digits,
     speak_npi,
     speak_phone,
+    speak_places,
     speak_tax_id,
     us_date,
 )
@@ -93,4 +94,20 @@ def test_only_decimal_digits_are_spoken() -> None:
     assert (
         speak_phone("² 2025550123")
         == "two, zero, two ... five, five, five ... zero, one, two, three"
+    )
+
+
+def test_an_outpatient_hospital_is_named_in_words() -> None:
+    # A place the list does not know used to fall back to "office", which asks
+    # the rep about the wrong benefits: facility ones can differ from office ones.
+    assert (
+        speak_places(["on_campus_outpatient_hospital"])
+        == "on-campus outpatient hospital"
+    )
+
+
+def test_places_are_read_in_the_fixed_order() -> None:
+    assert (
+        speak_places(["on_campus_outpatient_hospital", "home", "office"])
+        == "office, home, and on-campus outpatient hospital"
     )
