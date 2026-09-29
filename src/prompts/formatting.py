@@ -173,12 +173,22 @@ def speak_code(code: str) -> str:
     return ", ".join(parts)
 
 
+# Place key -> how it is said, in the fixed spoken order.
+_SPOKEN_PLACES = {
+    "office": "office",
+    "home": "home",
+    "school": "school",
+    "telehealth": "telehealth",
+    "daycare": "daycare",
+    "community": "community",
+    "on_campus_outpatient_hospital": "on-campus outpatient hospital",
+}
+
+
 def speak_places(locations: list[str]) -> str:
     """Read places in a fixed spoken order; an empty list falls back to the office."""
     places = [
-        place
-        for place in ("office", "home", "school", "telehealth", "daycare", "community")
-        if place in locations
+        spoken for place, spoken in _SPOKEN_PLACES.items() if place in locations
     ] or ["office"]
     if len(places) == 1:
         return places[0]
