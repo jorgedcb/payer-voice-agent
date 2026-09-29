@@ -119,7 +119,9 @@ def test_member_zip_reaches_the_navigator_only_when_sent():
         assert "ZIP" not in rendered
 
 
-@pytest.mark.parametrize("zip_code", ["7870", "787011", "78701-1234", "7870A"])
+@pytest.mark.parametrize(
+    "zip_code", ["7870", "787011", "78701-1234", "7870A", "７８７０１", "٧٨٧٠١"]
+)
 def test_member_zip_must_be_five_digits(zip_code):
     with pytest.raises(ValueError, match="member_zip must be five digits"):
         prepare(payload(member_zip=zip_code))

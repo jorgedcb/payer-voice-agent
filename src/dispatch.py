@@ -71,12 +71,13 @@ class CallSpec(BaseModel):
     @field_validator("member_zip")
     @classmethod
     def _five_digit_zip(cls, value: str | None) -> str | None:
-        """Five digits or nothing: the navigator keys it, and a menu asking for
-        the member's ZIP wants exactly five."""
+        """Five ASCII digits or nothing: the navigator keys it, and a menu asking
+        for the member's ZIP wants exactly five. `\\d` would also admit other
+        scripts' digits, which no keypad has."""
         if value is None or not value.strip():
             return None
         value = value.strip()
-        if not re.fullmatch(r"\d{5}", value):
+        if not re.fullmatch(r"[0-9]{5}", value):
             raise ValueError("member_zip must be five digits")
         return value
 
