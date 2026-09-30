@@ -226,30 +226,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.43.91"
+version = "1.43.103"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/76/e5c5fb601b09273599bf9c1a678ea2bc645385e758fbc66a36c9614b6324/boto3-1.43.91.tar.gz", hash = "sha256:98643e500883bf6fcd13d04bb19da983bf97e5f1c600fc11470ce45437fa96b4", size = 112693, upload-time = "2026-09-09T19:24:38.927Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/59/012898d78087105e9c20fe31605d3f1999921745e1890ee0f0d993846e2e/boto3-1.43.103.tar.gz", hash = "sha256:524821052527f6446d249bf710847b032d9b12135e346c9751777a0a2811cf04", size = 112687, upload-time = "2026-09-25T19:26:30.427Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/3f/0288c2383455f1c94741fd8de819fb6d7360065274d905711a62fc6cd1f2/boto3-1.43.91-py3-none-any.whl", hash = "sha256:5ff948cfac8bff72227930e0894a8542731e1998634d1ffd8a074c20a90af919", size = 140023, upload-time = "2026-09-09T19:24:37.588Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/66/6eb2e92c57b30e54c87fe14c8cd71de3aed9184f3cec95c39132a3fcc61f/boto3-1.43.103-py3-none-any.whl", hash = "sha256:574796187eb4e4fcaaf5c1b88c1724a1ba5a95bc27aeae5573676178666acc71", size = 140044, upload-time = "2026-09-25T19:26:29.085Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.43.91"
+version = "1.43.106"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9a/1e/c6d26cb1124799e2bee54854813b02aa8a813c57335f97b0b8ed50f902ff/botocore-1.43.91.tar.gz", hash = "sha256:0f12bceb8c5d90a0c60f326e883bf674ded8c7d7c18ee0b559843b3a6c52f2ad", size = 16089153, upload-time = "2026-09-09T19:24:34.426Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/b9/10ca68d0092895d5ea60f485a61a9840d5aff9d732c66ed60da53a20b1d4/botocore-1.43.106.tar.gz", hash = "sha256:006870b3b4e40547232ad12c3bb4faec91bbbe0659aafaa3b7fa48a112c4ee97", size = 16271399, upload-time = "2026-09-30T19:36:35.836Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/1a/f672cc408d808035397c5d63a1b31a6a56ee95417a9d60d120d96349d182/botocore-1.43.91-py3-none-any.whl", hash = "sha256:f96363d4caf50bce45fe2fdc2d4d86b3bea7f5cd805169d53c1371c2dd4772b6", size = 15782250, upload-time = "2026-09-09T19:24:31.222Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/eb/c51d3b54dfaa9267a687359d946dc2a1ca6a27fb4d381773e59b7bd72bf4/botocore-1.43.106-py3-none-any.whl", hash = "sha256:c1fb8818f9957cb5037f73db34ac1a12ba43562e31d6e7f9cb7e5fc64e1dba78", size = 15965506, upload-time = "2026-09-30T19:36:32.625Z" },
 ]
 
 [[package]]
@@ -951,17 +951,17 @@ wheels = [
 
 [[package]]
 name = "livekit-plugins-noise-cancellation"
-version = "0.3.0"
+version = "0.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "livekit" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/ad/e049eeca9c5175cc70c036c6dc5ce048215949b5d7ea83dbea6e2e06260c/livekit_plugins_noise_cancellation-0.3.0-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:6c877ca3f31278ce3b6ba7a3adc0eaaf813a53ba5a900445616be69ce7e4b3a8", size = 66079924, upload-time = "2026-07-17T10:35:02.671Z" },
-    { url = "https://files.pythonhosted.org/packages/07/61/7a860386cf0c9d27f4d3fdcfeee411153e1618552d6a15ad46d32df64ac5/livekit_plugins_noise_cancellation-0.3.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1d100f249d25556696d8fe358b7c22d81017df67f256ee3b5c9c36830409621f", size = 64625049, upload-time = "2026-07-17T10:35:06.186Z" },
-    { url = "https://files.pythonhosted.org/packages/2d/0d/df886e71b463911a9190cea948100f89c1e0546cff7e84dd93862b73e2d9/livekit_plugins_noise_cancellation-0.3.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:4b48de9ffdb8af47820ecd5e44ef0dbb910dfd05f17f6fadcbfd64deceb7a09a", size = 70250046, upload-time = "2026-07-17T10:35:09.376Z" },
-    { url = "https://files.pythonhosted.org/packages/d1/43/701df4746e4e8b660f1399ec0a3da80de211f1624725a7496d28f7443b4a/livekit_plugins_noise_cancellation-0.3.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:1703099d634d26171e2f0402c81fc84f13bf0bc92a7f9ba16f9af1d0eefee980", size = 73004876, upload-time = "2026-07-17T10:35:12.775Z" },
-    { url = "https://files.pythonhosted.org/packages/6f/b4/3ed7bac7aabec196c1e8969b407b71f69bdb0c942b1b3cd2aed07ae276cf/livekit_plugins_noise_cancellation-0.3.0-py3-none-win_amd64.whl", hash = "sha256:7f6001d0dd3b00c7748949b7a8349de002118fc03faa2d38411ad0d05180ccab", size = 65788455, upload-time = "2026-07-17T10:35:15.759Z" },
+    { url = "https://files.pythonhosted.org/packages/95/90/2a8043f5565654e6dc393671487adf045e6b1ced5a30849971bd06ca81a3/livekit_plugins_noise_cancellation-0.3.2-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:be077ba5c927189e31a6b33fd58f9d799df88c7a130df997af91f9d7aa63d5c8", size = 66604894, upload-time = "2026-09-15T19:28:41.505Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/27/4fcf53e681ef863484dec15a1d822d290248c394f4eceb635de44cb611e2/livekit_plugins_noise_cancellation-0.3.2-py3-none-macosx_11_0_arm64.whl", hash = "sha256:104c1ae210186f278d04de6f6f19ae2be2d79bc9440e7899ab918bd771f908cb", size = 65096466, upload-time = "2026-09-15T19:28:44.92Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/a5/29626b96e89c9d8620e89a33573b4971a8814ac5f74f419199526ff0e24a/livekit_plugins_noise_cancellation-0.3.2-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:28d82b0a3af773cf3653d8bcedb2166596847c03ab4009e64c931eb77af62a22", size = 70806325, upload-time = "2026-09-15T19:28:48.321Z" },
+    { url = "https://files.pythonhosted.org/packages/07/65/3ca9af4cc5517ebe9c58668f82362a737a981d930514e4af77d8fba360a3/livekit_plugins_noise_cancellation-0.3.2-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:632416212279531f30a012486627f4371ef474eca87e9610fbca6787d8599a3d", size = 73590802, upload-time = "2026-09-15T19:28:51.577Z" },
+    { url = "https://files.pythonhosted.org/packages/04/3b/d4a853d237edbe0425e52474e9ad6d4a9d4fd48ec3693d3d69eadf9f2692/livekit_plugins_noise_cancellation-0.3.2-py3-none-win_amd64.whl", hash = "sha256:28ab0d02a34a0459f3202246a818197ed3d2c7173d8239b649a8688ea47cd2f8", size = 66294362, upload-time = "2026-09-15T19:28:54.775Z" },
 ]
 
 [[package]]
@@ -1035,14 +1035,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "boto3", specifier = ">=1.43.91" },
+    { name = "boto3", specifier = ">=1.43.103" },
     { name = "botocore", specifier = ">=1.43.91" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "livekit-agents", extras = ["elevenlabs", "silero", "turn-detector"], specifier = ">=1.8.3" },
-    { name = "livekit-plugins-noise-cancellation", specifier = ">=0.3.0" },
+    { name = "livekit-plugins-noise-cancellation", specifier = ">=0.3.2" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.44.0" },
     { name = "opentelemetry-sdk", specifier = ">=1.44.0" },
-    { name = "protobuf", specifier = ">=7.36.1" },
+    { name = "protobuf", specifier = ">=7.36.2" },
     { name = "pydantic", specifier = ">=2.13.5" },
     { name = "python-dotenv", specifier = ">=1.2.3" },
 ]
@@ -1495,17 +1495,17 @@ wheels = [
 
 [[package]]
 name = "protobuf"
-version = "7.36.1"
+version = "7.36.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/86/73/f66c748df06e7fe24e658eddd600d19c4b40bad836c97ce2d0ad9851fb6b/protobuf-7.36.1.tar.gz", hash = "sha256:d0f6470f0ce2b84e3feaea2d4b816378b37ba4d4aa08a274305373de93e2d524", size = 512499, upload-time = "2026-08-31T22:40:04.667Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/89/5b8517baa72f84a67b8a307ba953c91057af618bf40bf676f3c03551f8f0/protobuf-7.36.2.tar.gz", hash = "sha256:497d0463ff3316681da6c0b9e8d06cb465d61abce00b613ab42226175644d1bb", size = 512737, upload-time = "2026-09-17T20:07:59.326Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/6c/3a54a58f2948b0f485df9ecdd06590f15d0a7abf46a89d50c3de709ff4ff/protobuf-7.36.1-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:3cf2ee25d006cee57294a1196ea43b37feb78e0dcd1e8af5c1aeddb777655aca", size = 456046, upload-time = "2026-08-31T22:39:56.865Z" },
-    { url = "https://files.pythonhosted.org/packages/6e/08/9f9548793c771095245c0eeaf0c84b76b16a5ef26158043d456f551344a0/protobuf-7.36.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:43d3d37b1eb24c113b9b7d02008cac44e423f00b611b7781ae998d7623972969", size = 344226, upload-time = "2026-08-31T22:39:58.263Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/51/1bdbd612fa3c51e42ea6f45d05e84dc748ddcd2663e1aa1e89a00a33facd/protobuf-7.36.1-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:39c518c05586c016d7874ff6079ee115bcec1ea5fbb1d177fbf7867ef4c67e44", size = 357229, upload-time = "2026-08-31T22:39:59.198Z" },
-    { url = "https://files.pythonhosted.org/packages/22/df/c799fe7a05ef16ba853a59db01f3a2c5f7d0676469589ccc4874f76a2a88/protobuf-7.36.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:97198b77e369a0abd8e262b8f6c7266c55ddb796a3a12c76d7b8881188ed83aa", size = 343228, upload-time = "2026-08-31T22:40:00.179Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/33/d4724ec5d86d496fe4108e220618aa0837ad3423a7af7ccdd9684ccc77c8/protobuf-7.36.1-cp310-abi3-win32.whl", hash = "sha256:0b53ce95272aad50ad25d7ff03373743209822e8ba42ea7fad27d2bee1547d00", size = 443002, upload-time = "2026-08-31T22:40:01.32Z" },
-    { url = "https://files.pythonhosted.org/packages/db/37/155788a0d8daded960375af604202805308169f9b859419ea0aa370946e2/protobuf-7.36.1-cp310-abi3-win_amd64.whl", hash = "sha256:51139351435d9b43d88a55eaa49fb6f737fbb478fb0cbf2cf694d1a04a9d3363", size = 456518, upload-time = "2026-08-31T22:40:02.494Z" },
-    { url = "https://files.pythonhosted.org/packages/39/ca/c47f91d3cab175b01fd8c4f0d80fdf8613be876cc616e66ad281a59c5ddf/protobuf-7.36.1-py3-none-any.whl", hash = "sha256:7d951e46b3f963d6c264c367c437921de9d5aedd9c3f9612b9077736b4e3ad5c", size = 179813, upload-time = "2026-08-31T22:40:03.54Z" },
+    { url = "https://files.pythonhosted.org/packages/32/72/98342feb672507c8f3a69e34b4fa8961f608edba5c1a48a6f47156d92cb5/protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:cbc70b17ee27e28894c7fee8bb04be1abead49e936bc70eb60052531eee2079e", size = 456039, upload-time = "2026-09-17T20:07:51.542Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/ea/91fdf7c2b8bbd49cde056f00a9df6773532987e1c00fe2830b895af95c7e/protobuf-7.36.2-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:e11e1f0180583a2af89db6a2ecd9e8dc40aa6d2988ca175bfd0e6d12ea72d74e", size = 344219, upload-time = "2026-09-17T20:07:52.914Z" },
+    { url = "https://files.pythonhosted.org/packages/17/ab/5fd5f8ece73fad885c5a09aa849b32d70472f954ba3a92d3bb5974ea953b/protobuf-7.36.2-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:f4fee11ec330d238b34a05c9b675f693c20415d1c5bd7d5320cc2f8a798eb9cf", size = 357223, upload-time = "2026-09-17T20:07:53.985Z" },
+    { url = "https://files.pythonhosted.org/packages/db/f3/3996583dd2906297a637af12114deddf7658af6e683fedb83be061983fb5/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:89f23aa53c24553a2416fd4fd1ec06f74fa42b14b546d8883128813f775bbfd2", size = 343223, upload-time = "2026-09-17T20:07:54.931Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/1b/dcc64f358fcb51811b58ae40b3d28f820725f116d86487cc20bd4b130701/protobuf-7.36.2-cp310-abi3-win32.whl", hash = "sha256:912c1221170e16c08d1f086762f563dd61ff83c18b5fa6652952dfaded66f728", size = 442998, upload-time = "2026-09-17T20:07:55.826Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/55/b77bda4e5e5f5971fb51b07663694690e9afdb9402136c16a522bd621cad/protobuf-7.36.2-cp310-abi3-win_amd64.whl", hash = "sha256:a300819d441e078a5608c0d3c709796bb548136058fda017ae51d425b44fd353", size = 456514, upload-time = "2026-09-17T20:07:57.188Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/04/d52c7016b04b6c5108f26691f9d33ec82a9b65d041f1a9c771137693d618/protobuf-7.36.2-py3-none-any.whl", hash = "sha256:bdb3a345d48db958e6ce1f18e508beb0cc981d64f24088427549c866cd039f1e", size = 179806, upload-time = "2026-09-17T20:07:58.211Z" },
 ]
 
 [[package]]
