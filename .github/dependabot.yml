@@ -1,0 +1,41 @@
+# Dependabot configuration.
+#
+# This file schedules weekly VERSION updates. Security updates (a pull request
+# for each published advisory against the lock) and the Dependabot alerts they
+# answer are separate repository settings, switched on in
+# Settings > Advanced Security; without them an advisory raises nothing.
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # Linters and the type checker get their own group. A bump can enable new
+      # checks and fail CI on unchanged code; bundled with the routine updates,
+      # that one red check would hold all of them back.
+      python-dev-tools:
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "deptry"
+      # Everything else: minor and patch batched, majors individually.
+      python-minor-patch:
+        exclude-patterns:
+          - "ruff"
+          - "mypy"
+          - "deptry"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions-all:
+        update-types:
+          - "minor"
+          - "patch"
