@@ -17,11 +17,36 @@ from livekit.agents.job import get_job_context
 
 from call_reference import CallReferenceResult, CallReferenceTask
 from dispatch import CallSpec
-from prompts import END_CALL_DESCRIPTION, call_date_today, instructions
+from prompts import (
+    END_CALL_DESCRIPTION,
+    INTERRUPTED_REPLY_NOTE,
+    call_date_today,
+    instructions,
+)
 
 logger = logging.getLogger(__name__)
 
 PROMPT = "verification"
+
+
+def mark_interrupted_replies(chat_ctx: llm.ChatContext) -> llm.ChatContext:
+    """The history with a note after each reply the representative talked over.
+
+    The SDK keeps an interrupted reply only as far as it was played, and its
+    `interrupted` flag never reaches the model. A question cut down to "Thank
+    you." then reads as the agent's whole turn, and the representative's next
+    words get taken as an answer to something they never heard.
+    """
+    items: list[llm.ChatItem] = []
+    for item in chat_ctx.items:
+        items.append(item)
+        if item.type == "message" and item.role == "assistant" and item.interrupted:
+            items.append(
+                llm.ChatMessage(role="system", content=[INTERRUPTED_REPLY_NOTE])
+            )
+    if len(items) == len(chat_ctx.items):
+        return chat_ctx
+    return llm.ChatContext(items)
 
 
 class InterviewAgent(Agent):
@@ -70,6 +95,13 @@ class InterviewAgent(Agent):
     @property
     def call_date(self) -> date:
         return self._call_date
+
+    async def llm_node(self, chat_ctx, tools, model_settings):
+        # Per request only: the stored history keeps what was actually said, and
+        # the closing task's copy of it is unchanged.
+        return Agent.default.llm_node(
+            self, mark_interrupted_replies(chat_ctx), tools, model_settings
+        )
 
     @function_tool()
     async def wait(self) -> None:

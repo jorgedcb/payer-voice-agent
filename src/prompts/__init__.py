@@ -24,6 +24,10 @@ from .formatting import (
 )
 
 END_CALL_DESCRIPTION = "Collect the call reference or confirm none is available, then say goodbye and disconnect."
+INTERRUPTED_REPLY_NOTE = (
+    "The representative started speaking over your reply above, so they heard only "
+    "those words of it."
+)
 DISCLOSURE = (
     "Answer identity questions according to what they ask:\n"
     "- A live-representative check, with no mention of being human or automated: "

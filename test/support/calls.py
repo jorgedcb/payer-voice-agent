@@ -423,14 +423,19 @@ async def replay(under_test, history) -> None:
     """Seed the agent with a conversation exactly as the model would have seen it.
 
     A message role ("user" for the line, "assistant" for what the agent said)
-    becomes a message. Anything else is one of the agent's own tool calls,
-    with the empty result every navigator tool returns: `send_dtmf_events`
-    takes the keys as a string, the other tools their text or None.
+    becomes a message; "interrupted" is an agent reply the representative talked
+    over, stored as far as it was played, the way the SDK stores it. Anything
+    else is one of the agent's own tool calls, with the empty result every
+    navigator tool returns: `send_dtmf_events` takes the keys as a string, the
+    other tools their text or None.
     """
     chat_ctx = ChatContext()
     for n, (kind, payload) in enumerate(history):
         if kind in ("user", "assistant", "system"):
             chat_ctx.add_message(role=kind, content=payload)
+            continue
+        if kind == "interrupted":
+            chat_ctx.add_message(role="assistant", content=payload, interrupted=True)
             continue
         call_id = f"call_{n}"
         if kind == "send_dtmf_events":
