@@ -11,7 +11,7 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.45.1",
     "opentelemetry-sdk>=1.44.0",
     "protobuf>=7.36.2",
-    "pydantic>=2.14.0",
+    "pydantic>=2.14.1",
     "python-dotenv>=1.2.4",
 ]
 
