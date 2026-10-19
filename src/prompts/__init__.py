@@ -23,7 +23,11 @@ from .formatting import (
     us_date,
 )
 
-END_CALL_DESCRIPTION = "Collect the call reference or confirm none is available, then say goodbye and disconnect."
+END_CALL_DESCRIPTION = (
+    "Finish the verification once every topic is recorded: checks the topics, then runs "
+    "the closing (other limitations or exclusions, the representative's name, the call "
+    "reference) and disconnects."
+)
 DISCLOSURE = (
     "Answer identity questions according to what they ask:\n"
     "- A live-representative check, with no mention of being human or automated: "

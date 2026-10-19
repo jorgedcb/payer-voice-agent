@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from livekit.agents import ToolError
 from livekit.agents.beta.tools import EndCallTool
+from support.interview import settle_every_topic
 
 from call_reference import CallReferenceResult, CallReferenceTask
 from dispatch import load_sample_spec
@@ -161,9 +162,10 @@ async def test_no_reference_completes_with_the_statement() -> None:
 
 async def test_end_call_collects_the_reference_before_shutting_down() -> None:
     agent = InterviewAgent(spec=load_sample_spec())
+    await settle_every_topic(agent)
     order: list[str] = []
 
-    async def collect() -> CallReferenceResult:
+    async def collect(**_) -> CallReferenceResult:
         order.append("collect")
         return CallReferenceResult(reference="AB73921")
 
@@ -181,6 +183,7 @@ async def test_end_call_collects_the_reference_before_shutting_down() -> None:
 
 async def test_end_call_does_not_shut_down_if_collection_fails() -> None:
     agent = InterviewAgent(spec=load_sample_spec())
+    await settle_every_topic(agent)
     shutdown = AsyncMock()
     agent._end_call_tool._end_call = shutdown
     with (
@@ -196,11 +199,16 @@ async def test_end_call_does_not_shut_down_if_collection_fails() -> None:
     assert agent.call_reference is None
 
 
-def test_interview_exposes_wait_and_gated_end_call() -> None:
+def test_interview_exposes_wait_recording_and_gated_end_call() -> None:
     agent = InterviewAgent(spec=load_sample_spec())
     # Reference collection still belongs to the closing task; the interview
-    # can either wait or enter closing through its guarded end_call.
-    assert {tool.info.name for tool in agent.tools} == {"wait", "end_call"}
+    # waits, records what settles each topic, and enters closing through its
+    # guarded end_call.
+    assert {tool.info.name for tool in agent.tools} == {
+        "wait",
+        "record_answer",
+        "end_call",
+    }
 
 
 async def test_task_gets_the_interview_call_date() -> None:
@@ -209,16 +217,17 @@ async def test_task_gets_the_interview_call_date() -> None:
     agent = InterviewAgent(spec=load_sample_spec(), call_date=CALL_DATE)
     with patch("interview.CallReferenceTask") as task_cls:
         task_cls.return_value = AsyncMock(return_value=CallReferenceResult("AB1"))()
-        await agent._collect_call_reference()
+        await agent._collect_call_reference(ask_limitations=True)
     assert task_cls.call_args.kwargs["call_date"] == CALL_DATE
 
 
 async def test_second_end_call_while_closing_is_refused() -> None:
     agent = InterviewAgent(spec=load_sample_spec())
+    await settle_every_topic(agent)
     agent._end_call_tool._end_call = AsyncMock(return_value="bye")
     started = MagicMock()
 
-    async def slow_collect() -> CallReferenceResult:
+    async def slow_collect(**_) -> CallReferenceResult:
         started()
         with pytest.raises(ToolError, match="already in progress"):
             await agent.end_call(MagicMock())

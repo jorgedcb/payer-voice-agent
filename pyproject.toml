@@ -48,7 +48,7 @@ python_version = "3.14"
 ignore_missing_imports = true
 
 [tool.deptry]
-known_first_party = ["agent", "call_reference", "dispatch", "interview", "navigator", "pass_rates", "prompts", "recording", "report", "support", "tracing", "voices"]
+known_first_party = ["agent", "call_reference", "dispatch", "interview", "navigator", "pass_rates", "prompts", "recording", "report", "support", "topics", "tracing", "voices"]
 # Tests are scanned too; pytest is only imported there.
 exclude = ["venv", "\\.venv", "\\.git"]
 

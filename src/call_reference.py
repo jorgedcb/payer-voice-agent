@@ -1,8 +1,9 @@
-"""Close the call: the representative's name, then the call reference.
+"""Close the call: other limitations, the representative's name, the call reference.
 
 Ending the call runs this task first (see InterviewAgent.end_call) so reference
-collection is enforced before shutdown. It takes the floor,
-gets the representative's name and the reference, reads the reference back,
+collection is enforced before shutdown. It takes the floor, asks about other
+limitations or exclusions when the benefits were collected, gets the
+representative's name and the reference, reads the reference back,
 and returns only once the representative confirms it or explicitly says none
 can be provided.
 
@@ -57,22 +58,35 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
         spec: CallSpec,
         *,
         call_date: date,
+        ask_limitations: bool = True,
         chat_ctx: NotGivenOr[llm.ChatContext] = NOT_GIVEN,
     ) -> None:
         super().__init__(
             instructions=instructions(PROMPT, spec, call_date=call_date),
             chat_ctx=chat_ctx,
         )
+        # The interview's last benefits question, asked here so it can only come
+        # once end_call found every topic settled. Not when the representative
+        # cannot continue, or when no benefits were collected.
+        self._ask_limitations = ask_limitations
         self._current: str | None = None
         self._name: str | None = None
         self._name_asked_at_confirm = False
 
     async def on_enter(self) -> None:
+        if self._ask_limitations:
+            opening = (
+                "Ask whether there are any other limitations or exclusions on these "
+                "benefits. Take their answer briefly, then go on to the representative's "
+                "name."
+            )
+        else:
+            opening = "Ask for the representative's first name and last initial."
         self.session.generate_reply(
             instructions=(
-                "Ask for the representative's first name and last initial. Anything they "
-                "already gave earlier in this conversation, record with the matching tool "
-                "instead of asking again, and move on to what is still missing."
+                f"{opening} Anything they already gave earlier in this conversation, "
+                "record with the matching tool instead of asking again, and move on to "
+                "what is still missing."
             )
         )
 

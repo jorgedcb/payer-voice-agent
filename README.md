@@ -22,10 +22,13 @@ the turn-taking settings match what the line is doing at that moment.
    guessing it from keywords, and the wait drops to conversational timing.
 3. **Interview** (`src/interview.py`, `src/prompts/verification.md`). Reached
    only by handoff, so it starts mid-conversation with what the representative
-   already said. It asks the benefit questions, reads identifiers back the way
-   a person writing them down needs to hear them, and closes with a dedicated
-   task (`src/call_reference.py`) that will not hang up until the
-   representative confirms a call reference or states none exists.
+   already said. It asks the benefit questions, records each topic as the
+   representative settles it (`src/topics.py`), reads identifiers back the way
+   a person writing them down needs to hear them, and closes only once every
+   topic the call needs is recorded, with a dedicated task
+   (`src/call_reference.py`) that asks about other limitations and will not
+   hang up until the representative confirms a call reference or states none
+   exists.
 
 The worker also records room audio to S3 through LiveKit Egress
 (`src/recording.py`) and saves the native session report, stamped with when the

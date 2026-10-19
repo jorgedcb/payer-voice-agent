@@ -159,6 +159,7 @@ navigator waits for the IVR's response rather than taking another action.
 ## Closing is enforced by a task
 
 **Decision:** `end_call` runs `CallReferenceTask` before the SDK hang-up. The task
+asks about other limitations or exclusions when benefits were collected, then
 collects the representative's name and a confirmed reference, or an explicit
 statement that none is available. Code references receive preformatted speech;
 composed name/date references are read naturally.
@@ -172,6 +173,34 @@ the formatted read-back avoids asking the model to derive pronunciation.
 **Code and coverage:** [`call_reference.py`](../src/call_reference.py),
 [`interview.py`](../src/interview.py),
 [`test_call_reference.py`](../test/interview/test_call_reference.py), and
+[`test_closing.py`](../test/interview/test_closing.py).
+
+## Benefit topics are tracked in code
+
+**Decision:** the interview records each topic with `record_answer` as the
+representative settles it, and `end_call` will not start the closing while a
+topic the call needs is open. `topics.py` derives that list from the call spec
+and the recorded network status. Each record returns the next open topic, so the
+reply that follows knows what is left. The question about other limitations or
+exclusions moved into `CallReferenceTask`, so it can only come once the check
+passes. `end_call` with `representative_cannot_continue` skips the check for a
+refusal or a dead end.
+
+**History:** on 2026-10-13 and 2026-10-14 Aetna calls, the interview asked the
+closing question with the medical-necessity review and the topics after it never
+asked. In a week of calls whose prompt carried that question, about a third of
+the interviews that reached the closing skipped it this way. A closing criterion
+in the prompt cut the early close after a final-sounding answer from 20 to 2 of
+20 replays, but not on a long call with a transfer (6 to 5 of 20). A silent
+`record_answer` caused dead air, because the model records without speaking; it
+now returns the next open topic and the reply follows from it. With the
+tracking, both replays and a control where every topic was covered passed 20 of
+20, and no run tried to close early. The cost is one more model call after each
+recorded answer: about 0.7 s median on the replay, text only.
+
+**Code and coverage:** [`topics.py`](../src/topics.py),
+[`interview.py`](../src/interview.py),
+[`test_topic_gate.py`](../test/interview/test_topic_gate.py), and
 [`test_closing.py`](../test/interview/test_closing.py).
 
 ## Traces are grouped by call ID

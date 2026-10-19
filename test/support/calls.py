@@ -424,7 +424,9 @@ BCBSM_ZIP_QUESTION = "Please say or enter the member's five digit ZIP code."
 # topics still open. The menu's read-out and the representatives' turns are as STT
 # delivered them; the clinic, members, representatives, references and amounts are
 # synthetic stand-ins. Both calls carried visit limits and the medical-necessity
-# question, collected both networks, and had prior authorization on file.
+# question, collected both networks, and had prior authorization on file. The
+# calls predate record_answer: its entries mark where an interview recording as
+# it goes would have settled each topic.
 AETNA_PT_CLINIC = {
     "caller_first_name": "Annie",
     "caller_last_initial": "S",
@@ -598,6 +600,11 @@ AETNA_VISIT_LIMITS_CALL = [
     ("assistant", "Hi Dana, I’m Annie, calling to"),
     ("user", "Hello?"),
     ("assistant", "Hi Dana, I’m calling to check benefits for one of your members."),
+    (
+        "record_answer",
+        ("coverage_effective_date", "June 15, 2026, from the phone menu"),
+    ),
+    ("record_answer", ("funding", "self funded, from the phone menu")),
     ("user", "Yeah. See, I can opt to check the benefit. On VIP?"),
     (
         "assistant",
@@ -722,10 +729,18 @@ AETNA_VISIT_LIMITS_CALL = [
         ),
     ),
     ("user", "Yeah."),
+    (
+        "record_answer",
+        (
+            "benefits",
+            "in network 70% after deductible, no copay, $3,000 deductible; out of network after deductible, no copay, $9,000 deductible; codes billable",
+        ),
+    ),
     ("assistant", "Thank you. Is HARBORVIEW"),
     ("user", "Yeah."),
     ("assistant", "Thanks. What is the coverage expiration date for the plan?"),
     ("user", "Let's not termination. It's the laptop."),
+    ("record_answer", ("coverage_expiration_date", "no termination date")),
     (
         "assistant",
         (
@@ -741,8 +756,13 @@ AETNA_VISIT_LIMITS_CALL = [
             "twenty seven."
         ),
     ),
+    (
+        "record_answer",
+        ("benefit_year_type", "plan year, April 1, 2026 to March 31, 2027"),
+    ),
     ("assistant", "Thank you. Is this plan self-funded or fully funded?"),
     ("user", "Self funded."),
+    ("record_answer", ("funding", "self funded")),
     ("assistant", "Thanks. Is coordination of benefits on file for this member?"),
     ("user", "Yeah. Lowers now member needs to updated."),
     (
@@ -754,6 +774,10 @@ AETNA_VISIT_LIMITS_CALL = [
     ),
     ("user", "Hard insurance."),
     (
+        "record_answer",
+        ("coordination_of_benefits", "on file, member needs to update it"),
+    ),
+    (
         "assistant",
         (
             "Okay, thank you. Does the plan cover the member for physical therapy out of "
@@ -761,6 +785,7 @@ AETNA_VISIT_LIMITS_CALL = [
         ),
     ),
     ("user", "No. Uh, yes."),
+    ("record_answer", ("out_of_state_coverage", "yes")),
     (
         "assistant",
         (
@@ -910,6 +935,11 @@ AETNA_OUT_OF_STATE_CALL = [
         ),
     ),
     ("assistant", "Hi Monica, I'm calling to check benefits for one"),
+    (
+        "record_answer",
+        ("coverage_effective_date", "January 1, 2026, from the phone menu"),
+    ),
+    ("record_answer", ("funding", "self funded, from the phone menu")),
     ("user", "Hello. Good morning. Yes."),
     (
         "assistant",
@@ -1217,6 +1247,13 @@ AETNA_OUT_OF_STATE_CALL = [
         ),
     ),
     (
+        "record_answer",
+        (
+            "visit_limits",
+            "60 visits per year, combined for PT, OT and ST, in and out of network",
+        ),
+    ),
+    (
         "assistant",
         (
             "Thank you. Are these benefits covered for office and telehealth visits, and "
@@ -1231,6 +1268,13 @@ AETNA_OUT_OF_STATE_CALL = [
             "Yeah. It is all about and billable, Annie, and for telehealth, it would be "
             "covered in in network benefit only, but ours forty out of network, it is not "
             "covered."
+        ),
+    ),
+    (
+        "record_answer",
+        (
+            "benefits",
+            "in network 90% after deductible, no copay; out of network 60% after deductible, no copay; codes billable; telehealth covered in network only",
         ),
     ),
     (
@@ -1252,6 +1296,7 @@ AETNA_OUT_OF_STATE_CALL = [
             "copper."
         ),
     ),
+    ("record_answer", ("provider_network_status", "out of network")),
     (
         "assistant",
         (
@@ -1266,14 +1311,18 @@ AETNA_OUT_OF_STATE_CALL = [
             "termination date."
         ),
     ),
+    ("record_answer", ("coverage_effective_date", "January 1, 2026")),
+    ("record_answer", ("coverage_expiration_date", "no future termination date")),
     ("assistant", "Thank you. Is this plan based on a calendar"),
     ("user", "You're welcome."),
     ("assistant", "Is this plan based on a calendar"),
     ("user", "As he checked on my... yeah. It is based on a calendar year."),
+    ("record_answer", ("benefit_year_type", "calendar year")),
     ("assistant", "Thank you. Is the plan self-funded or fully funded?"),
     ("user", "You're welcome."),
     ("assistant", "Is coordination"),
     ("user", "It is a self insured, self funded."),
+    ("record_answer", ("funding", "self funded")),
     ("assistant", "Thank you. Is coordination of benefits on file for this member?"),
     (
         "user",
@@ -1281,6 +1330,10 @@ AETNA_OUT_OF_STATE_CALL = [
             "Cortisi, o b n. And can you please advise the patient to update it? since "
             "there is no correlation of benefit on file."
         ),
+    ),
+    (
+        "record_answer",
+        ("coordination_of_benefits", "no COB on file, member should update it"),
     ),
     (
         "assistant",
@@ -1472,6 +1525,11 @@ AETNA_ALL_TOPICS_CALL = [
             "benefits for one of your members."
         ),
     ),
+    (
+        "record_answer",
+        ("coverage_effective_date", "April 1, 2025, from the phone menu"),
+    ),
+    ("record_answer", ("funding", "commercially funded, from the phone menu")),
     ("user", "Is it for doctor Victor Hale?"),
     ("assistant", "It's for the facility HARBORVIEW PHYSICAL THERAPY, PC."),
     ("user", "Mhmm. And this is for the number LENA ORTIZ?"),
@@ -1577,6 +1635,13 @@ AETNA_ALL_TOPICS_CALL = [
     ),
     ("user", "That is correct. Yes."),
     (
+        "record_answer",
+        (
+            "benefits",
+            "in network 100% after a $10 copay, no deductible; out of network 50% after deductible, $3,000 deductible; codes covered in both networks, office and telehealth",
+        ),
+    ),
+    (
         "assistant",
         (
             "Perfect. Is this provider in network or out of network for LENA ORTIZ's "
@@ -1584,6 +1649,7 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "out of network."),
+    ("record_answer", ("provider_network_status", "out of network")),
     ("assistant", "Thank you. What is the coverage effective date for this member?"),
     (
         "user",
@@ -1593,6 +1659,10 @@ AETNA_ALL_TOPICS_CALL = [
             "the calendar year."
         ),
     ),
+    ("record_answer", ("coverage_effective_date", "April 1, 2025")),
+    ("record_answer", ("coverage_expiration_date", "no termination date")),
+    ("record_answer", ("funding", "fully funded")),
+    ("record_answer", ("benefit_year_type", "calendar year")),
     ("assistant", "Okay, got it. Is coordination of benefits on file for this member?"),
     ("user", "For the COV here, no order coverage exist."),
     (
@@ -1602,10 +1672,15 @@ AETNA_ALL_TOPICS_CALL = [
             "to update it with our member services. Okay?"
         ),
     ),
+    (
+        "record_answer",
+        ("coordination_of_benefits", "no other coverage, last updated June 3, 2024"),
+    ),
     ("assistant", "Thank you. Does this plan cover the member out of state?"),
     ("user", "Let me double check."),
     ("wait", None),
     ("user", "Yes."),
+    ("record_answer", ("out_of_state_coverage", "yes")),
     (
         "assistant",
         (
@@ -1614,6 +1689,7 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "Based on medical necessity,"),
+    ("record_answer", ("visit_limits", "no set number, based on medical necessity")),
     (
         "assistant",
         (
@@ -1629,6 +1705,10 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     (
+        "record_answer",
+        ("visit_limit_type_and_visits_used", "hard maximum; visits used not visible"),
+    ),
+    (
         "assistant",
         (
             "Understood. Does the out-of-pocket maximum apply to these services for both "
@@ -1636,6 +1716,7 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "Over these were out of network."),
+    ("record_answer", ("out_of_pocket_maximum_applies", "applies out of network")),
     (
         "assistant",
         (
@@ -1644,6 +1725,7 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "No."),
+    ("record_answer", ("copay_counts_toward_out_of_pocket", "no")),
     (
         "assistant",
         (
@@ -1660,6 +1742,7 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "Yes."),
+    ("record_answer", ("deductible_counts_toward_out_of_pocket", "yes")),
     (
         "assistant",
         (
@@ -1685,6 +1768,7 @@ AETNA_ALL_TOPICS_CALL = [
     ("assistant", "Is a medical-necessity review required for physical"),
     ("user", "Medical review"),
     ("user", "No need for medical review."),
+    ("record_answer", ("medical_necessity_review", "not required")),
     (
         "assistant",
         (
@@ -1704,6 +1788,8 @@ async def replay(under_test, history) -> None:
     becomes a message. Anything else is one of the agent's own tool calls,
     with the empty result every navigator tool returns: `send_dtmf_events`
     takes the keys as a string, the other tools their text or None.
+    `record_answer` takes (topic, answer) and is also applied to the agent, so
+    the interview knows what the replayed conversation already settled.
     """
     chat_ctx = ChatContext()
     for n, (kind, payload) in enumerate(history):
@@ -1711,7 +1797,11 @@ async def replay(under_test, history) -> None:
             chat_ctx.add_message(role=kind, content=payload)
             continue
         call_id = f"call_{n}"
-        if kind == "send_dtmf_events":
+        if kind == "record_answer":
+            topic, answer = payload
+            arguments = json.dumps({"topic": topic, "answer": answer})
+            await under_test.record_answer(topic, answer)
+        elif kind == "send_dtmf_events":
             arguments = json.dumps({"events": list(payload)})
         elif payload is not None:
             arguments = json.dumps({"text": payload})
