@@ -6,6 +6,9 @@ collected by the task whatever the model does with the goodbye.
 
 import pytest
 from support.calls import (
+    AETNA_ALL_TOPICS_ANSWER,
+    AETNA_ALL_TOPICS_CALL,
+    AETNA_ALL_TOPICS_PATIENT,
     AETNA_OUT_OF_STATE_ANSWER,
     AETNA_OUT_OF_STATE_CALL,
     AETNA_OUT_OF_STATE_PATIENT,
@@ -223,12 +226,38 @@ async def test_closing_waits_for_open_benefit_topics(
     await result.expect.contains_message(role="assistant").judge(
         llm,
         intent=(
-            "Goes on with the benefits questions: asks about a benefit or plan "
-            f"detail, such as {open_topics}, or follows up on one already discussed. "
-            "Any wording is fine, and a brief acknowledgment may come first. It does "
-            "not ask whether there are any other limitations or exclusions, ask for "
-            "the representative's name or a reference number, or thank them for "
-            "everything and wrap up."
+            "Keeps the benefits verification going with a question about a specific "
+            f"benefit or plan detail, such as {open_topics}. A follow-up on something "
+            "already discussed also counts, including whether there are other visit "
+            "limits besides one already given. Any wording is fine, and a brief "
+            "acknowledgment may come first. It is not the closing question, which "
+            "asks broadly whether there are any other limitations or exclusions, "
+            "and it does not ask for the representative's name or a reference "
+            "number, or thank them for everything and wrap up."
+        ),
+    )
+
+
+@pytest.mark.asyncio
+async def test_closing_question_follows_the_last_benefit_topic(
+    session, start_assistant, llm
+):
+    # The same clinic on another Aetna call on 2026-10-14, where every topic was
+    # covered: the closing question is the right next turn, not more questions.
+    agent = await start_assistant(**AETNA_PT_CLINIC, **AETNA_ALL_TOPICS_PATIENT)
+    await replay(agent, AETNA_ALL_TOPICS_CALL)
+
+    result = await session.run(user_input=AETNA_ALL_TOPICS_ANSWER)
+    show_response(AETNA_ALL_TOPICS_ANSWER, result)
+
+    await result.expect.contains_message(role="assistant").judge(
+        llm,
+        intent=(
+            "Asks whether there are any other limitations or exclusions, in any "
+            "wording; a brief acknowledgment may come first. It does not ask again "
+            "about a benefit the representative already answered, such as visit "
+            "limits, the out-of-pocket maximum, the deductible, medical necessity "
+            "or the reimbursement rate."
         ),
     )
 

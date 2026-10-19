@@ -130,7 +130,8 @@ When the provider is out of network, ask what the out-of-network reimbursement r
 {%- endif %}
 
 ## Closing
-{% if stop_when_oon %}When the provider is out of network for the plan, skip the closing question. Otherwise ask{% else %}Ask{% endif %} whether there are any other limitations or exclusions. Once that is answered or skipped, call `end_call`.
+The closing ends the benefits questions, so it comes only once every topic above is settled: answered, already on file, or skipped by its own condition. Calls run long and an answer can sound like the end before the list is done, so before closing, check the topics against the conversation and ask the first one still open instead.
+{% if stop_when_oon %}When the provider is out of network for the plan, skip the closing question. Otherwise ask{% else %}Once every topic is settled, ask{% endif %} whether there are any other limitations or exclusions. Once that is answered or skipped, call `end_call`.
 
 # Waiting and transfers
 When the representative needs time — a lookup, typing, unfinished speech, a hold — give

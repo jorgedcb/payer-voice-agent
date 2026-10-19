@@ -1297,6 +1297,406 @@ AETNA_OUT_OF_STATE_ANSWER = (
 )
 
 
+# 2026-10-14, the same clinic on another member's call, where the interview
+# covered every topic before closing: the provider is out of network, the
+# representative answered the medical-necessity question and then declined to
+# give a reimbursement basis. The agent asked about other limitations or
+# exclusions next, which is the turn the closing should still take.
+AETNA_ALL_TOPICS_PATIENT = {
+    "member_name": "Lena Ortiz",
+    "member_id": "W527183946",
+    "member_dob": "1979-11-08",
+}
+
+AETNA_ALL_TOPICS_CALL = [
+    (
+        "user",
+        (
+            "Thank you for calling Aetna's dedicated provider service center. To improve "
+            "our service, your call will be monitored and recorded. By continuing with "
+            "this call, you understand, accept, and agree that the information "
+            "communicated by Aetna is not an offer of payment, does not guarantee "
+            "coverage or payment, and is subject to all benefit plan terms and "
+            "conditions, including member eligibility at the time of service. Please say "
+            "or enter your NPI or tax ID."
+        ),
+    ),
+    (
+        "user",
+        (
+            "Just a moment. Thanks. I found your record. Let's get started. Say claims or "
+            "press one coverage and benefits or press two pre certification or press "
+            "three contact information or press four appeal inquiries or press five or "
+            "join the network or press six."
+        ),
+    ),
+    ("user", "Coverage and benefits. Please say or enter the patient's Aetna ID."),
+    ("user", "One moment, please."),
+    ("wait", None),
+    ("user", "Now, enter or say the patient's date of birth."),
+    (
+        "user",
+        (
+            "One moment, please. The patient is LENA ORTIZ. Correct? Say yes or press "
+            "one. No, two."
+        ),
+    ),
+    ("user", "To receive the information via fax, say have it faxed or press two."),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Would you like to check benefits using the procedure code? Say yes or press "
+            "one, no, two."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Sorry. I didn't hear you. If you would like to check benefits using a "
+            "procedure code, say yes or press one. If not, say no or press two. For more "
+            "information, say help or press star."
+        ),
+    ),
+    (
+        "user",
+        (
+            "The reference number for all the information you'll hear on this call is a v "
+            "a one five five five four two zero six one eight three. Again, the reference "
+            "number is a v a one five five five four two zero six one eight three."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "This patient's coverage is active. They have an open access managed choice "
+            "POS plan, which is commercially funded. This plan does not require referrals "
+            "from the member's primary care physician. The effective date for the "
+            "patient's plan is April first twenty twenty five."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        ("The patient's original effective date is April first twenty twenty five."),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "The group number is one six two four eight three zero one four zero zero one "
+            "zero two."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Benefit details, including deductibles, co pays, and coinsurance are also "
+            "available. Do you want benefit details for this patient? Say yes or press "
+            "one, no or press two."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Sorry. I didn't hear you. Do you want benefit details? say yes, or press "
+            "one, no, or press two. For more information, say help or press star."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Sorry. I still didn't hear you. If you want benefit details, including "
+            "deductibles, co pays, and coinsurance for this patient, press one. If not, "
+            "press two. For more information, press star. Or to speak with a "
+            "representative, press zero."
+        ),
+    ),
+    (
+        "user",
+        (
+            "Are there any other patients I can help you with? Say yes or press one, no, "
+            "two."
+        ),
+    ),
+    (
+        "user",
+        (
+            "If your question is about registering for or using the Avelity provider "
+            "portal, please contact Avelity Client Services at one eight hundred two "
+            "eight two four five four eight. As our customer, your opinion is important "
+            "to us. You may have an opportunity to give us feedback on today's call. "
+            "Please stay on the line after the call to answer a short survey. Okay? "
+            "Please hold while I transfer your call."
+        ),
+    ),
+    (
+        "user",
+        (
+            "Thank you for holding. Your call will be answered by the next available "
+            "representative. Did you know you can log in to Avality to submit secured "
+            "document attachments, retrieve your remittance advice, and check claim "
+            "status? You can also submit reconsiderations and appeals through our new "
+            "streamlined process."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "All of our representatives are currently assisting other customers. Did you "
+            "know that we offer free educational webinars making it easier for you to do "
+            "business with us regardless of your participation status? Go to Aetna "
+            "webinars dot com or log in to a Validety and go to help and training, then "
+            "click get trained to get more information and register. Thank you for your "
+            "continued patience. A representative will be with you shortly."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Hello. Good morning. Thank you for calling Aetna. My name is Ray. I'm a "
+            "customer service advocate for today. How can I assist you?"
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Hi Ray, this is Annie, last initial S as in sierra. I'm calling to check "
+            "benefits for one of your members."
+        ),
+    ),
+    ("user", "Is it for doctor Victor Hale?"),
+    ("assistant", "It's for the facility HARBORVIEW PHYSICAL THERAPY, PC."),
+    ("user", "Mhmm. And this is for the number LENA ORTIZ?"),
+    ("assistant", "Yes, that's correct."),
+    (
+        "user",
+        (
+            "Thank you. Let me go and put up the account number here and double check if "
+            "you have a nine fifty account."
+        ),
+    ),
+    ("user", "One moment."),
+    ("wait", None),
+    (
+        "user",
+        ("Upon checking here, I have an architectural plan. So how can I assist you?"),
+    ),
+    (
+        "assistant",
+        (
+            "I'm looking for physical therapy benefits for both in network and out of "
+            "network. I have CPT codes to check. Would you like me to give you those "
+            "codes now?"
+        ),
+    ),
+    ("user", "Yeah."),
+    (
+        "assistant",
+        (
+            "Great. The codes are nine, seven, one, six, one ... nine, seven, one, one, "
+            "zero ... nine, seven, one, one, two ... nine, seven, one, four, zero ... and "
+            "nine, seven, five, three, zero. These would be for office and telehealth "
+            "visits. Did you get all those?"
+        ),
+    ),
+    ("user", "Yeah."),
+    (
+        "assistant",
+        (
+            "Okay. What are the benefits for physical therapy for both in network and out "
+            "of network? Could you let me know the copay,"
+        ),
+    ),
+    ("user", "Let me double check the codes, please."),
+    ("assistant", "Sure, take your time. "),
+    ("wait", None),
+    (
+        "user",
+        (
+            "I can see that the code here is valid and available and can be used under "
+            "the member's plan. Four nine seven one six one, it has a one unit for one "
+            "hundred eighty days. Okay?"
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Okay. Could you tell me the benefits for physical therapy for both in "
+            "network and out of network? I need the copay, coinsurance, and whether a "
+            "deductible applies"
+        ),
+    ),
+    ("user", "Is it"),
+    ("wait", None),
+    ("user", "Is it done office?"),
+    ("assistant", "Yes, it's done in the office and also via telehealth."),
+    (
+        "user",
+        (
+            "For this, the benefit for in network is one hundred percent no deductible "
+            "after ten dollar co pay for physical and occupational therapy and the visit "
+            "limit is based on medical necessity. We allow four modalities per date of "
+            "service. Okay?"
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Got it, thank you. Could you let me know the out of network benefits for "
+            "those same codes and places?"
+        ),
+    ),
+    (
+        "user",
+        (
+            "It's fifty percent after deductible for physical and occupational therapy. "
+            "Visit limited list of medical necessity. For accumulation for out of "
+            "network, um, upon checking here, the deductible is three thousand dollar, "
+            "and the out of pocket max is nine thousand. Includes all deductibles and co "
+            "pays. For accumulations here, the net amount for the deductible is eight "
+            "hundred twelve dollar and thirty cent. And the net amount for the out of "
+            "pocket is nine hundred twenty dollar and fifteen cents."
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Thanks. Is every CPT code I listed—including nine, seven, one, one, zero ... "
+            "nine, seven, one, one, two ... nine, seven, one, four, zero ... and nine, "
+            "seven, five, three, zero—covered at both in network and out of network, for "
+            "office and telehealth?"
+        ),
+    ),
+    ("user", "That is correct. Yes."),
+    (
+        "assistant",
+        (
+            "Perfect. Is this provider in network or out of network for LENA ORTIZ's "
+            "plan?"
+        ),
+    ),
+    ("user", "out of network."),
+    ("assistant", "Thank you. What is the coverage effective date for this member?"),
+    (
+        "user",
+        (
+            "The plan here is open access managed choice that started on April first one "
+            "twenty five with no termination date. It is a fully funded plan that runs in "
+            "the calendar year."
+        ),
+    ),
+    ("assistant", "Okay, got it. Is coordination of benefits on file for this member?"),
+    ("user", "For the COV here, no order coverage exist."),
+    (
+        "user",
+        (
+            "last updated on June three of twenty twenty four. So please inform November "
+            "to update it with our member services. Okay?"
+        ),
+    ),
+    ("assistant", "Thank you. Does this plan cover the member out of state?"),
+    ("user", "Let me double check."),
+    ("wait", None),
+    ("user", "Yes."),
+    (
+        "assistant",
+        (
+            "Thanks. Are there any visit limits for physical therapy for in network and "
+            "out of network, office and telehealth? If so, what"
+        ),
+    ),
+    ("user", "Based on medical necessity,"),
+    (
+        "assistant",
+        (
+            "Is that a hard or soft maximum? And how many visits have been used so far "
+            "this year?"
+        ),
+    ),
+    (
+        "user",
+        (
+            "It's a high max, and we cannot see the visit that has been used when it's "
+            "based on medical necessity."
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Understood. Does the out-of-pocket maximum apply to these services for both "
+            "in network and out of network, in the office and via telehealth?"
+        ),
+    ),
+    ("user", "Over these were out of network."),
+    (
+        "assistant",
+        (
+            "Thank you. For out of network, does the copay count toward the out-of-pocket "
+            "maximum?"
+        ),
+    ),
+    ("user", "No."),
+    (
+        "assistant",
+        (
+            "Does what is spent through the deductible count toward the out-of-pocket "
+            "maximum?"
+        ),
+    ),
+    ("user", "Sorry?"),
+    (
+        "assistant",
+        (
+            "Does the amount paid toward the deductible also count toward the "
+            "out-of-pocket maximum for out of network?"
+        ),
+    ),
+    ("user", "Yes."),
+    (
+        "assistant",
+        (
+            "Thank you. Is a medical-necessity review required for these services, and if "
+            "so, at which visit does it begin for out of network, office and telehealth?"
+        ),
+    ),
+    (
+        "user",
+        (
+            "Let me double check. Okay? Would you mind if I put this call on hold for two "
+            "to three minutes?"
+        ),
+    ),
+    ("assistant", "That's fine, go ahead."),
+    ("user", "Thank you."),
+    ("wait", None),
+    ("user", "Hello, ma'am."),
+    ("assistant", "Hi, I'm here."),
+    ("user", "And"),
+    ("wait", None),
+    ("user", "Your question again, sir?"),
+    ("assistant", "Is a medical-necessity review required for physical"),
+    ("user", "Medical review"),
+    ("user", "No need for medical review."),
+    (
+        "assistant",
+        (
+            "Thank you. For out of network, what is the out-of-network reimbursement rate "
+            "type for this plan? Is it based on UCR,"
+        ),
+    ),
+]
+
+AETNA_ALL_TOPICS_ANSWER = "We are no longer providing reimbursement rate."
+
+
 async def replay(under_test, history) -> None:
     """Seed the agent with a conversation exactly as the model would have seen it.
 
