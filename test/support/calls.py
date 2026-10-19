@@ -1301,7 +1301,10 @@ AETNA_OUT_OF_STATE_ANSWER = (
 # covered every topic before closing: the provider is out of network, the
 # representative answered the medical-necessity question and then declined to
 # give a reimbursement basis. The agent asked about other limitations or
-# exclusions next, which is the turn the closing should still take.
+# exclusions next, which is the turn the closing should still take. Two marked
+# exchanges are added so every topic is settled: the real call never asked
+# whether there is a copay out of network, or whether the in-network copay
+# counts toward the out-of-pocket maximum.
 AETNA_ALL_TOPICS_PATIENT = {
     "member_name": "Lena Ortiz",
     "member_id": "W527183946",
@@ -1576,6 +1579,9 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "That is correct. Yes."),
+    # Added: the real call never settled whether there is a copay out of network.
+    ("assistant", "And is there a copay out of network?"),
+    ("user", "Out of network it is also a ten dollar co pay."),
     (
         "assistant",
         (
@@ -1644,6 +1650,13 @@ AETNA_ALL_TOPICS_CALL = [
         ),
     ),
     ("user", "No."),
+    # Added: the real call never asked about the in-network copay.
+    (
+        "assistant",
+        "And in network, does the ten dollar copay count toward the out-of-pocket "
+        "maximum?",
+    ),
+    ("user", "Yes. In network the co pay counts toward the out of pocket."),
     (
         "assistant",
         (
