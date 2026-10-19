@@ -5,7 +5,22 @@ collected by the task whatever the model does with the goodbye.
 """
 
 import pytest
-from support.calls import assert_yields_turn, called, replay, show_response
+from support.calls import (
+    AETNA_ALL_TOPICS_ANSWER,
+    AETNA_ALL_TOPICS_CALL,
+    AETNA_ALL_TOPICS_PATIENT,
+    AETNA_OUT_OF_STATE_ANSWER,
+    AETNA_OUT_OF_STATE_CALL,
+    AETNA_OUT_OF_STATE_PATIENT,
+    AETNA_PT_CLINIC,
+    AETNA_VISIT_LIMITS_ANSWER,
+    AETNA_VISIT_LIMITS_CALL,
+    AETNA_VISIT_LIMITS_PATIENT,
+    assert_yields_turn,
+    called,
+    replay,
+    show_response,
+)
 
 from call_reference import CallReferenceTask
 
@@ -163,6 +178,91 @@ async def test_failed_transfer_with_no_way_to_continue_starts_closing(
     show_response(user_input, result)
     assert called(result, "end_call"), (
         "An explicitly failed transfer must not leave the agent waiting."
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("patient", "history", "last_answer", "open_topics"),
+    [
+        pytest.param(
+            AETNA_VISIT_LIMITS_PATIENT,
+            AETNA_VISIT_LIMITS_CALL,
+            AETNA_VISIT_LIMITS_ANSWER,
+            "whether the out-of-pocket maximum applies to physical therapy, whether "
+            "the deductible counts toward the out-of-pocket maximum, whether a "
+            "medical-necessity review is required, or whether the provider is in or "
+            "out of network (its answer was cut off)",
+            id="after-visit-limits",
+        ),
+        pytest.param(
+            AETNA_OUT_OF_STATE_PATIENT,
+            AETNA_OUT_OF_STATE_CALL,
+            AETNA_OUT_OF_STATE_ANSWER,
+            "whether the sixty-visit maximum is hard or soft or covers both office "
+            "and telehealth, whether the out-of-pocket maximum applies to physical "
+            "therapy, whether the deductible counts toward the out-of-pocket "
+            "maximum, whether a medical-necessity review is required, or how "
+            "out-of-network reimbursement is calculated",
+            id="after-out-of-state",
+            # 2026-10-19: still closes early after this transfer in 5 of 20 runs
+            # with the prompt's closing rule (6 of 20 without it); topics tracked
+            # in code fixed it but cost a model call per answer. Measured nightly.
+            marks=pytest.mark.quarantine,
+        ),
+    ],
+)
+async def test_closing_waits_for_open_benefit_topics(
+    session, start_assistant, llm, patient, history, last_answer, open_topics
+):
+    # Aetna calls on 2026-10-13 and 2026-10-14 asked about other limitations or
+    # exclusions at this turn and went on to end the call: the medical-necessity
+    # review was never asked, nor the other topics after it in the order.
+    agent = await start_assistant(**AETNA_PT_CLINIC, **patient)
+    await replay(agent, history)
+
+    result = await session.run(user_input=last_answer)
+    show_response(last_answer, result)
+
+    assert not called(result, "end_call"), (
+        "Benefit topics are still open; the call must not start closing."
+    )
+    await result.expect.contains_message(role="assistant").judge(
+        llm,
+        intent=(
+            "Keeps the benefits verification going with a question about a specific "
+            f"benefit or plan detail, such as {open_topics}. A follow-up on something "
+            "already discussed also counts, including whether there are other visit "
+            "limits besides one already given. Any wording is fine, and a brief "
+            "acknowledgment may come first. It is not the closing question, which "
+            "asks broadly whether there are any other limitations or exclusions, "
+            "and it does not ask for the representative's name or a reference "
+            "number, or thank them for everything and wrap up."
+        ),
+    )
+
+
+@pytest.mark.asyncio
+async def test_closing_question_follows_the_last_benefit_topic(
+    session, start_assistant, llm
+):
+    # The same clinic on another Aetna call on 2026-10-14, where every topic was
+    # covered: the closing question is the right next turn, not more questions.
+    agent = await start_assistant(**AETNA_PT_CLINIC, **AETNA_ALL_TOPICS_PATIENT)
+    await replay(agent, AETNA_ALL_TOPICS_CALL)
+
+    result = await session.run(user_input=AETNA_ALL_TOPICS_ANSWER)
+    show_response(AETNA_ALL_TOPICS_ANSWER, result)
+
+    await result.expect.contains_message(role="assistant").judge(
+        llm,
+        intent=(
+            "Asks whether there are any other limitations or exclusions, in any "
+            "wording; a brief acknowledgment may come first. It does not ask again "
+            "about a benefit the representative already answered, such as visit "
+            "limits, the out-of-pocket maximum, the deductible, medical necessity "
+            "or the reimbursement rate."
+        ),
     )
 
 
