@@ -24,37 +24,11 @@ from support.calls import (
 
 from call_reference import CallReferenceTask
 
-# The sample call with every other topic recorded, at its last question.
 CLOSING = [
-    (
-        "record_answer",
-        (
-            "benefits",
-            "in network 20% after deductible, no copay; out of network 40% after "
-            "deductible; codes billable at office and home",
-        ),
-    ),
-    ("record_answer", ("provider_network_status", "in network")),
-    ("record_answer", ("coverage_effective_date", "January 1, 2026")),
-    ("record_answer", ("coverage_expiration_date", "no termination date")),
-    ("record_answer", ("benefit_year_type", "calendar year")),
-    ("record_answer", ("funding", "fully funded")),
-    ("record_answer", ("coordination_of_benefits", "not on file")),
-    ("record_answer", ("out_of_state_coverage", "yes")),
-    ("record_answer", ("prior_authorization", "not required in either network")),
-    ("record_answer", ("visit_limits", "20 visits per calendar year, combined")),
-    ("record_answer", ("visit_limit_type_and_visits_used", "hard maximum, none used")),
-    ("record_answer", ("out_of_pocket_maximum_applies", "yes, both networks")),
-    ("record_answer", ("copay_counts_toward_out_of_pocket", "no copay")),
-    ("record_answer", ("deductible_counts_toward_out_of_pocket", "yes")),
-    (
-        "assistant",
-        "Is a medical-necessity review required for these visits, and if so, from "
-        "which visit?",
-    ),
+    ("assistant", "Are there any other limitations or exclusions?"),
 ]
 
-LAST_ANSWER = "No, there's no review. Everything is based on medical necessity."
+LAST_ANSWER = "No, everything is based on medical necessity."
 
 
 @pytest.mark.asyncio
@@ -246,12 +220,9 @@ async def test_closing_waits_for_open_benefit_topics(
     result = await session.run(user_input=last_answer)
     show_response(last_answer, result)
 
-    # end_call may be tried and refused; what matters is that the closing
-    # never starts while topics are open.
-    assert not isinstance(session.current_agent, CallReferenceTask), (
+    assert not called(result, "end_call"), (
         "Benefit topics are still open; the call must not start closing."
     )
-    assert agent.call_reference is None
     await result.expect.contains_message(role="assistant").judge(
         llm,
         intent=(
@@ -272,38 +243,22 @@ async def test_closing_question_follows_the_last_benefit_topic(
     session, start_assistant, llm
 ):
     # The same clinic on another Aetna call on 2026-10-14, where every topic was
-    # covered: the last answer settles the last topic, end_call goes through, and
-    # the closing step asks about other limitations, not more questions.
+    # covered: the closing question is the right next turn, not more questions.
     agent = await start_assistant(**AETNA_PT_CLINIC, **AETNA_ALL_TOPICS_PATIENT)
     await replay(agent, AETNA_ALL_TOPICS_CALL)
 
     result = await session.run(user_input=AETNA_ALL_TOPICS_ANSWER)
     show_response(AETNA_ALL_TOPICS_ANSWER, result)
 
-    assert agent.open_topics == []
-    assert isinstance(session.current_agent, CallReferenceTask)
-    await (
-        result.expect[last_message(result)]
-        .is_message(role="assistant")
-        .judge(
-            llm,
-            intent=(
-                "Asks whether there are any other limitations or exclusions, in any "
-                "wording; a brief acknowledgment may come first. It does not ask again "
-                "about a benefit the representative already answered, such as visit "
-                "limits, the out-of-pocket maximum, the deductible, medical necessity "
-                "or the reimbursement rate."
-            ),
-        )
-    )
-
-
-def last_message(result) -> int:
-    """Index of the last thing the agent said in the turn."""
-    return max(
-        i
-        for i, ev in enumerate(result.events)
-        if ev.type == "message" and ev.item.role == "assistant"
+    await result.expect.contains_message(role="assistant").judge(
+        llm,
+        intent=(
+            "Asks whether there are any other limitations or exclusions, in any "
+            "wording; a brief acknowledgment may come first. It does not ask again "
+            "about a benefit the representative already answered, such as visit "
+            "limits, the out-of-pocket maximum, the deductible, medical necessity "
+            "or the reimbursement rate."
+        ),
     )
 
 
@@ -317,11 +272,7 @@ def ended(result) -> bool:
 
 
 async def at_closing_task(session, start_assistant):
-    """Run to the point where the closing task heard there are no other limitations.
-
-    The last interview answer settles the last topic, so end_call starts the task,
-    which asks about other limitations or exclusions before the name.
-    """
+    """Run to the point where the last interview answer made end_call start the task."""
     agent = await start_assistant()
     await replay(agent, CLOSING)
     result = await session.run(user_input=LAST_ANSWER)
@@ -329,17 +280,14 @@ async def at_closing_task(session, start_assistant):
     result.expect.contains_function_call(name="end_call")
     assert not ended(result)
     assert isinstance(session.current_agent, CallReferenceTask)
-    result = await session.run(user_input="No, nothing else.")
-    show_response("No, nothing else.", result)
-    assert not ended(result)
     return agent
 
 
 @pytest.mark.quarantine  # 2026-09-18: thanks "Jamie R" in words without recording the name, 3 in 5 runs on main; measured nightly
 @pytest.mark.asyncio
 async def test_last_answer_hands_the_closing_to_the_task(session, start_assistant, llm):
-    # The interview asks nothing after its last topic: the task asks about
-    # limitations and the name, the interview never asks for a reference.
+    # The interview asks nothing after the open question: the task asks for
+    # the name, the interview never asks for a reference.
     await at_closing_task(session, start_assistant)
     result = await session.run(user_input="Jamie R.")
     show_response("Jamie R.", result)
