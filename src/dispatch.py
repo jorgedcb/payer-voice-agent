@@ -50,11 +50,9 @@ class CallSpec(BaseModel):
     # Which networks' benefits the interview collects; the backend snapshots
     # the company setting at dispatch. both_networks: ask both on every call.
     # provider_network: ask network status first, collect that network only.
-    # in_network_only: as provider_network, but an out-of-network provider
-    # ends the benefit questions.
-    network_benefit_scope: Literal[
-        "both_networks", "provider_network", "in_network_only"
-    ] = "both_networks"
+    network_benefit_scope: Literal["both_networks", "provider_network"] = (
+        "both_networks"
+    )
 
     @field_validator("caller_last_initial")
     @classmethod
