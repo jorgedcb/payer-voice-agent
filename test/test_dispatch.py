@@ -43,16 +43,13 @@ async def test_backend_payload_renders_both_agents():
 
 
 @pytest.mark.parametrize(
-    "scope,network_first,both,stop_when_oon",
+    "scope,network_first,both",
     [
-        ("both_networks", False, True, False),
-        ("provider_network", True, False, False),
-        ("in_network_only", True, False, True),
+        ("both_networks", False, True),
+        ("provider_network", True, False),
     ],
 )
-def test_backend_network_scope_keeps_its_meaning(
-    scope, network_first, both, stop_when_oon
-):
+def test_backend_network_scope_keeps_its_meaning(scope, network_first, both):
     spec = prepare(payload(network_benefit_scope=scope))
     rendered = prompts.instructions("verification", spec)
     first_topic = (
@@ -63,11 +60,7 @@ def test_backend_network_scope_keeps_its_meaning(
     assert first_topic in rendered
     assert ("both networks' benefits" in rendered) is both
     assert ("in network and out of network" in rendered) is both
-    stop = "Never ask a benefit, limit, cost-share or authorization question after that answer."
-    assert (stop in rendered) is stop_when_oon
-    # The OON reimbursement topic asks about an out-of-network provider's
-    # claims, which in_network_only never collects.
-    assert ("16. Out-of-network reimbursement" in rendered) is (not stop_when_oon)
+    assert "16. Out-of-network reimbursement" in rendered
 
 
 def test_omitting_the_scope_renders_the_legacy_both_networks_script():
@@ -85,7 +78,7 @@ def test_an_unknown_scope_is_rejected():
     "flag", ["require_both_network_benefits", "collect_oon_benefits"]
 )
 @pytest.mark.parametrize("value", [True, False])
-@pytest.mark.parametrize("scope", [None, "in_network_only"])
+@pytest.mark.parametrize("scope", [None, "provider_network"])
 def test_dispatch_rejects_retired_network_flags(flag, value, scope):
     data = payload(**{flag: value})
     if scope is not None:
