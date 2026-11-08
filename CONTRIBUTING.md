@@ -1,6 +1,9 @@
 # Contributing
 
 Open an issue for a bug or proposed change, or submit a focused pull request.
+This repository mirrors the code as it runs in production, which is maintained
+elsewhere: a pull request here is reviewed and its change applied upstream, then
+arrives back through the mirror, so it is closed rather than merged.
 For vulnerabilities, use the private reporting process in [SECURITY.md](SECURITY.md).
 Use synthetic data in issues, pull requests, fixtures, and examples; leave out
 credentials, patient information, real recordings, and unredacted transcripts.
@@ -71,6 +74,6 @@ Target `main`. Explain the problem, what changes for callers or maintainers, and
 which checks you ran. Add regression coverage when changing behavior. If a
 dependency changes, update both `pyproject.toml` and `uv.lock` as appropriate.
 
-The branch must be up to date with `main`, required CI checks must pass, and
-review conversations must be resolved before merging. Keep the change focused
-so it can be reviewed independently.
+Required CI checks must pass and review conversations must be resolved before
+the change is taken upstream. Keep it focused so it can be reviewed
+independently.

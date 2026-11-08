@@ -11,3 +11,6 @@ venv/
 reports/
 # ONNX Runtime session artifact
 /:memory:.ses
+# The deployment target. Each deployment keeps its own copy; it names a
+# production agent, so it never enters git.
+livekit.toml

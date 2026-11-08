@@ -1,9 +1,11 @@
 # Agent instructions
 
-This repository is public. Everything written into it or onto its GitHub pages is
-published: code, comments, fixtures, commit messages, and issue and pull request text,
-including every earlier version of an edited description. Removing something later
-leaves it in that history, so check text before you commit or post it.
+This project is public. Every file in it is published to
+[jorgedcb/payer-voice-agent](https://github.com/jorgedcb/payer-voice-agent), and so is
+everything written onto that repository's GitHub pages: code, comments, fixtures, and
+issue and pull request text, including every earlier version of an edited description.
+Removing something later leaves it in that history, so check text before you commit or
+post it.
 
 Nothing published here may identify a real call, the people and businesses on it, or the
 team's internal workspace: no internal call or trace IDs, no links to internal tools

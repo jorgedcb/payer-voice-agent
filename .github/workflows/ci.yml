@@ -50,7 +50,10 @@ jobs:
     # reports a notice and passes; the offline suite still gates the change.
     # Model nondeterminism is handled two ways: a failed test is rerun once on
     # its own before the job is red, and a known flake is quarantined
-    # (pytest -m quarantine) and measured by the nightly workflow instead.
+    # (pytest -m quarantine) and measured by a nightly run instead.
+    # Pull requests only: a push to main carries code whose live suite already
+    # passed before it was merged.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

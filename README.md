@@ -87,7 +87,7 @@ Model behavior is measured, not asserted once. `test/` has three kinds of test:
   not a bug, and they are skipped unless asked for.
 
 Known-flaky tests are **quarantined** (`-m quarantine`), excluded from the PR
-gate, and measured by the nightly workflow, which runs every live suite several
+gate, and measured by a nightly run, which runs every live suite several
 times and prints a pass rate per test (`src/pass_rates.py`). A test that slips
 from 100% to 80% shows up there even when each PR run happened to pass.
 
