@@ -47,6 +47,9 @@ LAST_ANSWER = "No, everything is based on medical necessity."
             "Your reference for my part of the call is AB73921. "
             "Please stay on the line for the next team. Goodbye.",
             id="reference-before-transfer",
+            # 2026-11-13: speaks alongside `wait` instead of only waiting, 1 in 5
+            # runs on main; measured nightly.
+            marks=pytest.mark.quarantine,
         ),
     ],
 )
@@ -444,6 +447,7 @@ async def test_correction_after_read_back(session, start_assistant, llm):
     )
 
 
+@pytest.mark.quarantine  # 2026-11-13: says it will wait for the reference instead of a brief acknowledgment, 1 in 5 runs on main; measured nightly
 @pytest.mark.asyncio
 async def test_waits_while_reference_is_generated(session, start_assistant, llm):
     agent = await at_closing_task(session, start_assistant)

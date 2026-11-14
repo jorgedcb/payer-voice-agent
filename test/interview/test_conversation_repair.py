@@ -70,6 +70,7 @@ HISTORY = [
 ]
 
 
+@pytest.mark.quarantine  # 2026-11-13: only calls `wait` instead of answering, 1 in 5 runs on main; measured nightly
 async def test_apology_after_interruption_does_not_reverse_caller_role(
     session,
     start_assistant,
@@ -237,7 +238,15 @@ async def test_explicit_name_confirmation_still_corrects_the_name(
     result.expect.no_more_events()
 
 
-@pytest.mark.parametrize("heard_name", ["Anita", "Annie"])
+@pytest.mark.parametrize(
+    "heard_name",
+    [
+        # 2026-11-13: corrects or spells the name unasked, 1 in 5 runs on main;
+        # measured nightly.
+        pytest.param("Anita", marks=pytest.mark.quarantine),
+        "Annie",
+    ],
+)
 async def test_casual_thanks_does_not_trigger_unsolicited_name_correction(
     session,
     start_assistant,

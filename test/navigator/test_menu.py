@@ -412,6 +412,7 @@ async def test_transfer_announcement_moves_to_the_queue(
     assert_moved_to_the_queue(result)
 
 
+@pytest.mark.quarantine  # 2026-11-13: does not move the call to the queue, 1 in 5 runs on main; measured nightly
 async def test_hold_announcement_moves_to_the_queue(session, start_navigator) -> None:
     await start_navigator()
 
