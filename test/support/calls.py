@@ -59,6 +59,20 @@ async def assert_yields_turn(result, judge, *, after: str) -> None:
             )
 
 
+async def judge_replies_or_silence(result, judge, *, intent: str) -> None:
+    """Accept `wait` alone, or judge every reply in the turn against the intent."""
+    if called(result, "wait"):
+        assert_wait_is_exclusive(result)
+        return
+    for _ in result.events:
+        await (
+            result.expect.next_event()
+            .is_message(role="assistant")
+            .judge(judge, intent=intent)
+        )
+    result.expect.no_more_events()
+
+
 def handoff_opening(result) -> str:
     """The opening the navigator wrote into its handoff call.
 

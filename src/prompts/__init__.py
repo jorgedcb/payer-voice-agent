@@ -15,6 +15,7 @@ from .formatting import (
     service_label,
     speak_code,
     speak_cpt_codes,
+    speak_date,
     speak_digits,
     speak_npi,
     speak_phone,
@@ -51,6 +52,7 @@ _env = Environment(undefined=StrictUndefined, keep_trailing_newline=True)
 _env.filters.update(
     nato_spell=nato_spell,
     speak_code=speak_code,
+    speak_date=speak_date,
     speak_cpt_codes=speak_cpt_codes,
     speak_digits=speak_digits,
     speak_npi=speak_npi,

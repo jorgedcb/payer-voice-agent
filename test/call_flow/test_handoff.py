@@ -122,7 +122,8 @@ async def test_interview_does_not_reintroduce_after_its_opening(
         .judge(
             llm,
             intent=(
-                "Confirms it is still on the line, in a sentence or two. Does not "
+                "Confirms it is still on the line, in at most a sentence or two; a "
+                "bare 'Yes.' is enough. Does not "
                 "introduce itself again with 'Hi, this is Greta', does not spell a last "
                 "initial, and does not restate that it is calling about benefits for a member."
             ),

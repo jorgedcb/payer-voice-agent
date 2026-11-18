@@ -21,6 +21,7 @@ the agent gives the line time to respond instead of generating another action.
 
 import logging
 from datetime import date
+from typing import Literal
 
 from livekit.agents import (
     Agent,
@@ -80,9 +81,14 @@ def navigator_llm() -> llm.LLM:
     )
 
 
+# A phone keypad's twelve keys. The SDK's DtmfEvent also has the A-D tones, which
+# no payer line uses; offered them, the model keyed "A" for a member ID's "W".
+PhoneKey = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "*", "#"]
+
+
 @function_tool(description=sdk_send_dtmf_events.info.description)
-async def send_dtmf_events(ctx: RunContext, events: list[DtmfEvent]) -> str | None:
-    result = await sdk_send_dtmf_events(ctx, events)
+async def send_dtmf_events(ctx: RunContext, events: list[PhoneKey]) -> str | None:
+    result = await sdk_send_dtmf_events(ctx, [DtmfEvent(key) for key in events])
     # The SDK returns text even on success, which otherwise starts another LLM
     # turn. Preserve failures (and unfamiliar results) so recovery stays possible.
     if result.startswith("Successfully sent DTMF events:"):
@@ -168,9 +174,9 @@ class _PhoneSystemAgent(Agent):
     async def wait(self) -> None:
         """Stay silent as the only action this turn.
 
-        Use it while the system is still talking or listing options, is playing
-        hold music, is announcing a transfer or a wait time, or is looking up an
-        entry you just gave it. Never acknowledge a recording out loud.
+        Use it while the system is still talking or listing options, is looking
+        up an entry you just gave it, or, once you are holding for a
+        representative, is playing hold music or announcing a wait time. Never acknowledge a recording out loud.
         Do not combine this with speech or another tool. After another action,
         finish the turn; the session already listens for the line's response.
         """
@@ -263,8 +269,9 @@ class NavigatorAgent(_PhoneSystemAgent):
     async def hold_for_representative(self) -> HoldAgent:
         """Start waiting for a person, once the system has finished with you.
 
-        Call this when the system says it is transferring you, connecting you, or
-        putting you in line for the next available representative, and it is no
+        Call this when the system says a representative is coming (it is
+        transferring you, connecting you, putting you in line, or asking you to
+        stay on the line until a representative is with you) and it is no
         longer asking you for anything. Do not call it while a menu is still
         listing options or waiting for an entry.
         """

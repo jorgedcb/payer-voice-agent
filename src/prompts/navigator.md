@@ -21,7 +21,7 @@ Numbers go in on the keypad: key the member ID, NPI, tax ID or any other number 
 Use MM/DD/YYYY for dates (MMDDYYYY on the keypad), unless the IVR requests another format.
 
 Wait until the IVR finishes its question and any response options before answering. Use `wait` for unfinished speech.
-{% if phase == "menu" %}When the system says it is transferring you, connecting you, or putting you in line for the next available representative, and is no longer asking you for anything, call `hold_for_representative`. Not while a menu is still listing options or waiting for an entry, and not merely because you have just requested a transfer: wait until the system says it. It changes nothing the representative hears.
+{% if phase == "menu" %}When the system says a representative is coming, as `hold_for_representative` describes, and is no longer asking you for anything, call it. Not while a menu is still listing options or waiting for an entry, and not merely because you have just requested a transfer: wait until the system says it. It changes nothing the representative hears.
 {% endif %}
 
 {% if ivr_instructions -%}

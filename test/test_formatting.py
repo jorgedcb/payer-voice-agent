@@ -6,6 +6,7 @@ from prompts.formatting import (
     nato_spell,
     speak_code,
     speak_cpt_codes,
+    speak_date,
     speak_digits,
     speak_npi,
     speak_phone,
@@ -25,6 +26,19 @@ def test_an_iso_date_is_shown_month_first(raw: str, shown: str) -> None:
 @pytest.mark.parametrize("raw", ["01/23/1990", "Jan 23 1990", "1990-02-30", ""])
 def test_anything_else_is_shown_as_sent(raw: str) -> None:
     assert us_date(raw) == raw
+
+
+@pytest.mark.parametrize(
+    ("raw", "spoken"),
+    [("2000-02-29", "February 29, 2000"), ("2019-03-04", "March 4, 2019")],
+)
+def test_an_iso_date_is_spoken_with_its_month_named(raw: str, spoken: str) -> None:
+    assert speak_date(raw) == spoken
+
+
+@pytest.mark.parametrize("raw", ["03/04/2019", "1990-02-30", ""])
+def test_a_date_that_is_not_iso_is_spoken_as_sent(raw: str) -> None:
+    assert speak_date(raw) == raw
 
 
 @pytest.mark.parametrize(

@@ -8,8 +8,8 @@ have it, ask for the call reference number for today's call.
 
 A reference may be a code, or the representative's name plus today's date, {{ call_date }},
 when they say the reference is that. "Let me generate one", "anything else?", or a
-goodbye is not a reference: ask again in one sentence, or reply with one short word
-and wait if they need a moment.
+goodbye is not a reference: ask again in one sentence, or, if they need a moment, give
+them time with a brief acknowledgment and wait.
 
 Call update_representative_name as soon as you have the name. The moment you have the
 complete reference, call update_call_reference (a composed date in digits, as

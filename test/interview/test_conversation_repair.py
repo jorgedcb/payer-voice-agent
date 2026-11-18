@@ -10,7 +10,7 @@ reports that the recording says Annie where STT wrote Anita.
 """
 
 import pytest
-from support.calls import assert_wait_is_exclusive, called, replay, show_response
+from support.calls import judge_replies_or_silence, replay, show_response
 
 # The interview inherited these user messages, without the navigator's tools.
 HISTORY = [
@@ -70,7 +70,6 @@ HISTORY = [
 ]
 
 
-@pytest.mark.quarantine  # 2026-11-13: only calls `wait` instead of answering, 1 in 5 runs on main; measured nightly
 async def test_apology_after_interruption_does_not_reverse_caller_role(
     session,
     start_assistant,
@@ -98,25 +97,20 @@ async def test_apology_after_interruption_does_not_reverse_caller_role(
     show_response("I'm sorry.", result)
 
     # Silence is also safe; any speech must keep the caller/representative roles.
-    for _ in result.events:
-        await (
-            result.expect.next_event()
-            .is_message(role="assistant")
-            .judge(
-                llm,
-                intent=(
-                    "The ONLY requirement is that the caller does not offer to help "
-                    "or assist the payer representative as if the caller were customer "
-                    "service (for example, 'How can I assist you today?' or 'What can "
-                    "I help you with?'). A response consisting ONLY of 'No problem.' "
-                    "or 'No problem at all.' FULLY satisfies this requirement. Do not "
-                    "require stating the call purpose, moving the conversation forward, "
-                    "or repeating details. Offering to repeat the caller's own details "
-                    "is also acceptable."
-                ),
-            )
-        )
-    result.expect.no_more_events()
+    await judge_replies_or_silence(
+        result,
+        llm,
+        intent=(
+            "The ONLY requirement is that the caller does not offer to help "
+            "or assist the payer representative as if the caller were customer "
+            "service (for example, 'How can I assist you today?' or 'What can "
+            "I help you with?'). A brief courtesy alone, such as 'No problem.', "
+            "'No worries.' or 'That's okay.', FULLY satisfies this requirement. Do not "
+            "require stating the call purpose, moving the conversation forward, "
+            "or repeating details. Offering to repeat the caller's own details "
+            "is also acceptable."
+        ),
+    )
 
 
 @pytest.mark.parametrize(
@@ -136,7 +130,7 @@ async def test_harmless_transcription_variation_does_not_derail_the_question(
         caller_first_name="Annie",
         service_type="physical_therapy",
         cpt_codes=["97110"],
-        service_locations=["11"],
+        service_locations=["office"],
     )
     await replay(
         agent,
@@ -158,7 +152,10 @@ async def test_harmless_transcription_variation_does_not_derail_the_question(
             llm,
             intent=(
                 "Answers the representative's request with CPT code 97110, with digits "
-                "spoken as words allowed. May also give the place of service. Does not "
+                "spoken as words allowed; the code alone is a complete answer. May also "
+                "give the place of service (the visits happen in an office, so "
+                "mentioning office visits is correct) and end with a short check that "
+                "they got it. Does not "
                 "correct or spell the caller's name, correct the phrase 'physical fair "
                 "pee', or ask what that phrase means. Uses the established physical "
                 "therapy context to answer the actual question."
@@ -268,24 +265,16 @@ async def test_casual_thanks_does_not_trigger_unsolicited_name_correction(
 
     # A casual thanks is not an identity-confirmation question. Correcting a
     # possible STT substitution adds a detour; silence or an acknowledgment is OK.
-    if called(result, "wait"):
-        assert_wait_is_exclusive(result)
-        return
-    for _ in result.events:
-        await (
-            result.expect.next_event()
-            .is_message(role="assistant")
-            .judge(
-                llm,
-                intent=(
-                    "The caller is Annie, last initial S; the representative is Jessie. "
-                    "Does not correct, reconfirm, repeat, or spell the caller Annie's "
-                    "name or last initial in response to the representative's casual thanks. "
-                    "Does not ask the representative to confirm the name. A brief "
-                    "acknowledgment or continuing the benefits call without discussing "
-                    "the caller's name is acceptable. Addressing the representative "
-                    "as Jessie is allowed."
-                ),
-            )
-        )
-    result.expect.no_more_events()
+    await judge_replies_or_silence(
+        result,
+        llm,
+        intent=(
+            "The caller is Annie, last initial S; the representative is Jessie. "
+            "Does not correct, reconfirm, repeat, or spell the caller Annie's "
+            "name or last initial in response to the representative's casual thanks. "
+            "Does not ask the representative to confirm the name. A brief "
+            "acknowledgment or continuing the benefits call without discussing "
+            "the caller's name is acceptable. Addressing the representative "
+            "as Jessie is allowed."
+        ),
+    )

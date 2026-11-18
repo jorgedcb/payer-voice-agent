@@ -223,3 +223,16 @@ def us_date(s: str) -> str:
         return date.fromisoformat(s).strftime("%m/%d/%Y")
     except ValueError:
         return s
+
+
+def speak_date(s: str) -> str:
+    """ "2000-02-29" -> "February 29, 2000", a date as a person says it.
+
+    Given the ISO form, the interview model sometimes read it out digit by digit.
+    Anything that is not an ISO date is shown as sent.
+    """
+    try:
+        day = date.fromisoformat(s)
+    except ValueError:
+        return s
+    return f"{day:%B} {day.day}, {day.year}"

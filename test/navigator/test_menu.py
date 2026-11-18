@@ -264,7 +264,9 @@ async def test_benefit_details_custom_instruction_declines(
     assert spoken(result) == ""
 
 
-@pytest.mark.quarantine  # 2026-09-12: sometimes only calls `wait` here; measured nightly
+# 2026-11-17: 2 of 16 runs key the ID; the rest speak it or key a different letter
+# form. No rule says what a letter becomes on the keypad; measured nightly.
+@pytest.mark.quarantine
 async def test_enter_member_id_with_pound_in_one_call(session, start_navigator) -> None:
     await start_navigator()
 
@@ -412,7 +414,6 @@ async def test_transfer_announcement_moves_to_the_queue(
     assert_moved_to_the_queue(result)
 
 
-@pytest.mark.quarantine  # 2026-11-13: does not move the call to the queue, 1 in 5 runs on main; measured nightly
 async def test_hold_announcement_moves_to_the_queue(session, start_navigator) -> None:
     await start_navigator()
 
@@ -425,3 +426,30 @@ async def test_hold_announcement_moves_to_the_queue(session, start_navigator) ->
     )
 
     assert_moved_to_the_queue(result)
+
+
+@pytest.mark.parametrize(
+    "announcement",
+    [
+        pytest.param(
+            "Your call is important to us. Please listen carefully, as our menu "
+            "options have changed.",
+            id="menu-follows",
+        ),
+        pytest.param(
+            "Please stay on the line while we verify your information.",
+            id="entry-being-checked",
+        ),
+    ],
+)
+async def test_stay_on_the_line_without_a_representative_stays_in_the_menu(
+    session, start_navigator, announcement
+) -> None:
+    # The queue's turn timing answers a menu partway through its options, and
+    # the call never returns to the menu phase, so only a representative coming
+    # moves it there.
+    await start_navigator()
+
+    result = await hears(session, announcement)
+
+    assert_waited(result)

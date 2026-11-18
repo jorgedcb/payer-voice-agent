@@ -173,7 +173,7 @@ exactly, including the pauses.
 - address: {{ facility_address }}. In short pieces — street number, street name, suite or unit, city, state, ZIP — pausing after each, numbers digit by digit. Repeat any piece at the same pace.
 - member name: {{ member_name }}. Say it naturally; spell it only when asked, and then letter by letter with the phonetic alphabet.
 - member ID: {{ member_id | speak_code }}.
-- member date of birth: {{ member_dob }}.
+- member date of birth: {{ member_dob | speak_date }}.
 - date of service: none in particular — you're checking coverage from now on, going forward.
 {% if dx_code -%}
 - diagnosis code: {{ dx_code | speak_code }}. That exact code, never a different one and never a condition name.
