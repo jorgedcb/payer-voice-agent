@@ -4,7 +4,7 @@ These tests pin the mechanics of the handoff, not menu judgment. They should kee
 passing unchanged once the navigator grows real IVR logic.
 """
 
-from support.calls import handoff_opening, show_response, turn_settings
+from support.calls import called, handoff_opening, show_response, turn_settings
 
 from interview import InterviewAgent
 
@@ -100,6 +100,29 @@ async def test_a_bare_greeting_still_gets_the_reason_for_the_call(
             "that is only a greeting fails, since nobody would speak next."
         ),
     )
+
+
+async def test_a_person_who_answers_without_a_name_is_handed_off_once_they_say_so(
+    session, start_navigator
+) -> None:
+    """A person can answer the call with no name and no transfer before them.
+
+    The agent may take them for the system and ask for a representative; once
+    they say they are one, it hands off rather than asking again.
+    """
+    await start_navigator()
+
+    answer = "Provider services, how can I help you?"
+    result = await session.run(user_input=answer)
+    show_response(answer, result)
+    if called(result, "representative_answered"):
+        return
+
+    reply = "Yes, you're speaking with a representative. How can I help you?"
+    result = await session.run(user_input=reply)
+    show_response(reply, result)
+
+    assert called(result, "representative_answered"), "kept asking a person"
 
 
 async def test_interview_does_not_reintroduce_after_its_opening(

@@ -6,6 +6,7 @@ calls in order. Identifiers are invented, since the calls carried real patients'
 """
 
 import json
+import re
 
 from livekit.agents import ChatContext, llm
 
@@ -14,6 +15,19 @@ def called(result, name: str) -> bool:
     """Whether the agent called this tool during the turn."""
     return any(
         ev.type == "function_call" and ev.item.name == name for ev in result.events
+    )
+
+
+_DIGIT_WORDS = dict(
+    zip("zero one two three four five six seven eight nine".split(), "0123456789")
+) | {"oh": "0"}
+
+
+def spoken_digits(text: str) -> str:
+    """The digits in what was keyed or said, whether written as numerals or words."""
+    return "".join(
+        token if token.isdecimal() else _DIGIT_WORDS.get(token, "")
+        for token in re.findall(r"\d|[a-z]+", text.lower())
     )
 
 

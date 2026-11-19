@@ -214,6 +214,79 @@ async def test_offer_to_hang_up_asks_for_a_person(session, start_navigator) -> N
     )
 
 
+async def test_keyed_offer_of_more_self_service_is_declined_with_its_key(
+    session, start_navigator
+) -> None:
+    """A yes-or-no offer that names keys gets the key for no, nothing spoken.
+
+    Declining with words and a request for a person is for an assistant that
+    takes speech; a menu that names keys is answered with them.
+    """
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    await replay(navigator, UHC_BENEFITS_CALL)
+
+    offer = (
+        "Coinsurance is twenty percent after deductible has been met. Do you want "
+        "to hear that again? Say yes or press one. No, or press two."
+    )
+    result = await hears(session, offer)
+    show_response(offer, result)
+
+    assert presses(result) == [["2"]], (
+        f"did not press no: {presses(result)} {spoken(result)!r}"
+    )
+    assert spoken(result) == ""
+
+
+async def test_benefit_question_that_lists_options_is_answered(
+    session, start_navigator
+) -> None:
+    """UHC asks what benefit the call is about, naming the choices.
+
+    It routes on the answer. The rule to keep asking an assistant for a
+    representative is for its open questions; a question that names choices
+    still gets one of them, as JUDGMENT says.
+    """
+    navigator = await start_navigator(
+        **UHC_PATIENT, ivr_instructions=UHC_IVR_INSTRUCTIONS
+    )
+    question_at = next(
+        n
+        for n, (kind, text) in enumerate(UHC_BENEFITS_CALL)
+        if kind == "user" and "what type of benefit" in text
+    )
+    await replay(navigator, UHC_BENEFITS_CALL[:question_at])
+
+    question = UHC_BENEFITS_CALL[question_at][1]
+    result = await hears(session, question)
+    show_response(question, result)
+
+    answer = spoken(result).lower()
+    assert answer, f"did not answer: {presses(result)}"
+    assert "representative" not in answer and "agent" not in answer, (
+        f"asked for a person instead of choosing: {answer!r}"
+    )
+
+
+async def test_a_named_virtual_assistant_is_not_a_person(
+    session, start_navigator
+) -> None:
+    """An assistant can have a persona name; giving it does not make it a person."""
+    await start_navigator()
+
+    greeting = (
+        "Hi, I'm Ava, your virtual assistant for provider services. "
+        "How can I help you today?"
+    )
+    result = await hears(session, greeting)
+    show_response(greeting, result)
+
+    assert not called(result, "representative_answered"), "handed off to a bot"
+    assert not called(result, "end_call")
+
+
 async def test_fax_offer_does_not_request_fax(session, start_navigator) -> None:
     """The fax offer heard two minutes into a live call must not select fax."""
     await start_navigator()
@@ -391,6 +464,24 @@ async def test_voicemail_hangs_up(session, start_navigator) -> None:
     result.expect.contains_function_call(name="end_call")
     assert presses(result) == []
     assert spoken(result) == ""
+
+
+async def test_closed_office_recording_hangs_up(session, start_navigator) -> None:
+    # From a 2026-09-10 Aetna call that reached the menu after hours. The call
+    # page labelled this recording a representative's greeting; it is an exit.
+    await start_navigator()
+
+    result = await hears(
+        session,
+        "Our business hours are Monday through Friday, eight AM to five PM. "
+        "Please try your call again during business hours.",
+        forbid=("representative_answered", "hold_for_representative"),
+    )
+
+    result.expect.contains_function_call(name="end_call")
+    assert all(
+        ev.item.name == "end_call" for ev in result.events if ev.type == "function_call"
+    )
 
 
 async def test_unfinished_menu_waits(session, start_navigator) -> None:

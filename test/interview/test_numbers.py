@@ -9,7 +9,7 @@ verbatim, and on a live call the voice read the tag aloud.
 import re
 
 import pytest
-from support.calls import show_response
+from support.calls import show_response, spoken_digits
 
 
 @pytest.mark.parametrize(
@@ -41,16 +41,9 @@ async def test_identifiers_are_paced_one_character_at_a_time_on_first_read(
     print(f"Speech text: {raw_response}")
     # Anything angle-bracketed reaches the voice as spoken words.
     assert "<" not in raw_response and ">" not in raw_response, raw_response
-    digit_words = dict(
-        zip("zero one two three four five six seven eight nine".split(), "0123456789")
-    )
-    digit_words["oh"] = "0"
-    tokens = re.findall(r"\d|[a-z]+", raw_response.lower())
-    spoken_digits = "".join(
-        token if token.isdecimal() else digit_words.get(token, "") for token in tokens
-    )
+    said = spoken_digits(raw_response)
     expected_digits = "".join(ch for ch in expected if ch.isdecimal())
-    assert spoken_digits == expected_digits, spoken_digits
+    assert said == expected_digits, said
     # Each character is its own word: the digits are never run together as a number.
     assert not re.search(r"\d{2,}", raw_response), raw_response
     await message.judge(

@@ -5,8 +5,12 @@ import json
 from support.calls import assert_wait_is_exclusive, called
 
 
-async def hears(session, text: str):
+async def hears(session, text: str, *, forbid: tuple[str, ...] = ()):
     """One payer utterance, and the navigator's turn in response.
+
+    `forbid` names tools the turn must not call. They are checked first: a
+    handoff makes the interview speak its opening, which the text check below
+    would report only as stray text.
 
     Every test goes through here so one check runs on every turn: the agent
     produced no plain text. The navigator forces a tool call on each
@@ -17,6 +21,10 @@ async def hears(session, text: str):
     the model said "Okay."
     """
     result = await session.run(user_input=text)
+    for tool in forbid:
+        assert not called(result, tool), (
+            f"called {tool} on: {text}\nturn: {tool_calls(result)}"
+        )
     stray = [
         ev.item.text_content
         for ev in result.events
@@ -25,6 +33,15 @@ async def hears(session, text: str):
     assert not stray, f"navigator wrote text instead of calling a tool: {stray}"
     assert_wait_is_exclusive(result)
     return result
+
+
+def tool_calls(result) -> list[tuple[str, str]]:
+    """Every tool call this turn, by name with its raw arguments."""
+    return [
+        (ev.item.name, ev.item.arguments)
+        for ev in result.events
+        if ev.type == "function_call"
+    ]
 
 
 def spoken(result) -> str:

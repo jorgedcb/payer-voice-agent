@@ -193,15 +193,25 @@ async def test_a_menu_after_the_transfer_is_still_answered(
     assert not called(result, "representative_answered")
 
 
+@pytest.mark.parametrize(
+    "pickup",
+    [
+        "Thank you for holding. This is Wilson. May I have your name, please?",
+        # A line that answers with a talking assistant makes its own voice sound
+        # like a person, so the navigator is told the system is whoever answered
+        # until a transfer. After one, a person who skips their name is still one.
+        "Thanks for holding, provider services. How can I help you today?",
+    ],
+    ids=["gives-a-name", "no-name"],
+)
 async def test_the_queue_hands_off_when_a_person_picks_up(
-    session, start_navigator
+    session, start_navigator, pickup
 ) -> None:
     navigator = await start_navigator(**AETNA_PATIENT)
     await replay(navigator, AETNA_CALL)
     await session.run(user_input=TRANSFER)
     assert isinstance(session.current_agent, HoldAgent)
 
-    pickup = "Thank you for holding. This is Wilson. May I have your name, please?"
     result = await session.run(user_input=pickup)
     show_response(pickup, result)
 
