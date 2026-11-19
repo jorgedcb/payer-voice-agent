@@ -6,10 +6,9 @@ import pytest
 from livekit.agents import llm
 from pydantic import ValidationError
 
-from dispatch import CallSpec
 from dispatch import sample_spec as spec
 from interview import InterviewAgent
-from prompts import RESERVED_TEMPLATE_NAMES, instructions
+from prompts import instructions
 
 # The navigator writes the opening and the interview answers identity questions
 # for the rest of the call, so both prompts carry the name and spell the initial.
@@ -46,12 +45,6 @@ def test_unspellable_last_initial_is_rejected_at_dispatch(initial: str) -> None:
 
 def test_blank_last_initial_means_none() -> None:
     assert spec(caller_last_initial="  ").caller_last_initial is None
-
-
-def test_template_names_do_not_shadow_spec_fields() -> None:
-    # instructions() splats the spec's fields next to these names; a collision
-    # would raise at dial time for every call.
-    assert not RESERVED_TEMPLATE_NAMES & CallSpec.model_fields.keys()
 
 
 def _rep_asked_name() -> llm.ChatContext:

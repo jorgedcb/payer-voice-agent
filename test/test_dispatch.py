@@ -188,7 +188,10 @@ def test_dispatch_cannot_override_the_service_label():
         ("physical_therapy", "F84.0", True, False),
         ("mental_health", "F84.0", True, False),
         ("mental_health_provider_outpatient", "F84.0", True, False),
-        ("speech_therapy", "F80.9", True, False),
+        ("speech_therapy", "F80.9", True, True),
+        ("occupational_therapy", "F82", True, True),
+        ("speech_therapy", "f88", True, True),
+        ("speech_therapy", "F90.0", True, False),
         ("occupational_therapy", "", True, False),
         ("speech_therapy", "F84.0", False, False),
     ],
@@ -198,7 +201,28 @@ def test_visit_limit_followup_is_derived_from_call_facts(
 ):
     data = payload(service_type=service, dx_code=diagnosis, ask_visit_limits=ask_limits)
     rendered = prompts.instructions("verification", prepare(data))
-    assert ("ask whether it still applies under F84.0" in rendered) is expected
+    assert ("different under diagnosis code" in rendered) is expected
+
+
+@pytest.mark.parametrize(
+    "service,diagnosis,expected",
+    [
+        ("speech_therapy", "F84.0", True),
+        ("occupational_therapy", "F80.9", True),
+        ("physical_therapy", "F84.0", False),
+        ("mental_health_provider_outpatient", "F84.0", False),
+        ("speech_therapy", "R48.8", False),
+        ("speech_therapy", "F81.0", False),
+        ("speech_therapy", " f80.2 ", True),
+        ("speech_therapy", "", False),
+    ],
+)
+def test_developmental_therapy_is_asked_as_habilitative(service, diagnosis, expected):
+    rendered = prompts.instructions(
+        "verification", prepare(payload(service_type=service, dx_code=diagnosis))
+    )
+    assert ("looking for habilitative" in rendered) is expected
+    assert ("The services are habilitative" in rendered) is expected
 
 
 def test_sample_loads_from_another_directory(monkeypatch, tmp_path):
@@ -243,3 +267,8 @@ def test_interview_preserves_complete_procedure_codes(codes, spoken):
     assert f"CPT codes: {spoken}." in rendered
     assert "office and home" in rendered
     assert spec.cpt_codes == codes
+
+
+def test_the_diagnosis_code_is_kept_as_icd_10_writes_it():
+    assert prepare(payload(dx_code=" f84.0 ")).dx_code == "F84.0"
+    assert prepare(payload(dx_code="  ")).dx_code == ""

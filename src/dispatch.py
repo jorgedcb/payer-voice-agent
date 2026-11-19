@@ -10,6 +10,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+# ICD-10 F80-F89, the developmental disorders (autism is F84.0), except F81: a
+# scholastic-skills disorder such as dyslexia is educational, not habilitative.
+DEVELOPMENTAL_DIAGNOSIS = re.compile(r"F8[02-9]")
+
 
 class CallSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
@@ -53,6 +57,24 @@ class CallSpec(BaseModel):
     network_benefit_scope: Literal["both_networks", "provider_network"] = (
         "both_networks"
     )
+
+    @property
+    def habilitative(self) -> bool:
+        """Speech or occupational therapy for a developmental diagnosis.
+
+        Payers file it under habilitative benefits whatever the payer, and their
+        representatives ask which one before they read a benefit.
+        """
+        return self.service_type in (
+            "speech_therapy",
+            "occupational_therapy",
+        ) and bool(DEVELOPMENTAL_DIAGNOSIS.match(self.dx_code))
+
+    @field_validator("dx_code")
+    @classmethod
+    def _bare_code(cls, value: str) -> str:
+        """As ICD-10 writes it: the interview spells it and matches it."""
+        return value.strip().upper()
 
     @field_validator("caller_last_initial")
     @classmethod

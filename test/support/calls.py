@@ -31,6 +31,15 @@ def spoken_digits(text: str) -> str:
     )
 
 
+def said(result) -> str:
+    """Everything the agent said this turn, as one string."""
+    return " ".join(
+        ev.item.text_content
+        for ev in result.events
+        if ev.type == "message" and ev.item.role == "assistant" and ev.item.text_content
+    )
+
+
 def assert_wait_is_exclusive(result) -> None:
     """Silence is an alternative to speech or another action, never an extra step."""
     if not called(result, "wait"):

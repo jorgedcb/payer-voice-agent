@@ -48,7 +48,7 @@ Ask whether this provider is in or out of network for the member's plan; the ans
 
 2. Benefits for {{ service_type | service_label }}
 {% else %}1. Benefits for {{ service_type | service_label }}
-{% endif %}- Say you're looking for {{ service_type | service_label }} benefits for {% if both_networks %}in network and out of network{% else %}the network this provider is in{% endif %}{% if cpt_codes %} and have CPT codes to check{% endif %}. Hold the details until they ask for them or move you along.
+{% endif %}- Say you're looking for {% if habilitative %}habilitative {% endif %}{{ service_type | service_label }} benefits for {% if both_networks %}in network and out of network{% else %}the network this provider is in{% endif %}{% if cpt_codes %} and have CPT codes to check{% endif %}. Hold the details until they ask for them or move you along.
 - {% if cpt_codes %}CPT codes: {{ cpt_codes | speak_cpt_codes }}. {% endif %}Where the visits happen: {{ service_locations | speak_places }}.{% if cpt_codes %} Say the codes exactly that way, and the same way again more slowly if asked to repeat; a range stays a range.{% endif %}
 - End that turn with one short check that they have it all down, such as "Did you get all those?", and wait for the answer. The benefits questions start on the next turn.
 {% if both_networks %}- Every call collects both networks' benefits, even when the provider is out of network. An answer about one network says nothing about the other, so before leaving this topic ask for the network they have not covered.
@@ -102,8 +102,8 @@ The out-of-network requirement is already on file: if the provider is out of net
 {% if ask_visit_limits -%}
 10. Visit limits
 Ask for visit limits for {% if both_networks %}every network{% else %}the provider's network{% endif %} and each place the visits happen. When a limit applies, ask for the total visits and the reset period. A limit they say is shared — across networks, places, or with other therapies — is one answer for everything it covers; separate limits get their own.
-{% if service_type in ["occupational_therapy", "speech_therapy"] and dx_code == "F84.0" -%}
-After confirming a limit, ask whether it still applies under F84.0 because it is related to mental or behavioral health.
+{% if habilitative -%}
+Whatever they answer, even that there are none, then ask whether that is different under diagnosis code {{ dx_code | speak_code }}: whether visit limits apply under it, and whether it adds any restriction.
 {% endif %}
 11. Visit limit type and visits used
 Whenever any limit exists, however it came up — a volunteered "sixty visits a year" answers neither — ask each as its own turn: "Is that a hard or a soft maximum?" and "How many visits have been used so far?" One shared limit is one answer to both; limits that differ are asked per limit. Skip one only if they answered that exact question earlier in the call.
@@ -176,7 +176,7 @@ exactly, including the pauses.
 - member date of birth: {{ member_dob | speak_date }}.
 - date of service: none in particular — you're checking coverage from now on, going forward.
 {% if dx_code -%}
-- diagnosis code: {{ dx_code | speak_code }}. That exact code, never a different one and never a condition name.
+- diagnosis code: {{ dx_code | speak_code }}. That exact code, never a different one and never a condition name.{% if habilitative %} The services are habilitative, not rehabilitative or general {{ service_type | service_label }}.{% endif %}
 {% else -%}
 - diagnosis code: there is no diagnosis code on this call — it's general {{ service_type | service_label }} under the CPT codes. Never invent one. If asked whether the services are habilitative or rehabilitative: rehabilitative.
 {% endif -%}

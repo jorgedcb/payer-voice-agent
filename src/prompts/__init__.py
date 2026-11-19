@@ -65,10 +65,6 @@ _env.filters.update(
 _env.globals.update(disclosure=DISCLOSURE)
 
 
-# Names the templates receive on top of the spec's own fields. A CallSpec field
-# with one of these names would shadow it at dial time; test_greeting pins it.
-RESERVED_TEMPLATE_NAMES = frozenset({"call_date", "phase"})
-
 # Which phase of the call a prompt is rendered for. A closed set because the
 # templates branch on `phase == "menu"`: any other spelling silently renders the
 # hold variant, which would drop the menu's own rules while its tools stay.
@@ -97,8 +93,10 @@ def instructions(
     name: str, spec: CallSpec, *, call_date: date | None = None, phase: Phase = "menu"
 ) -> str:
     """Render backend fields directly; filters handle presentation, not call data."""
+    # A spec field named like one of these raises here, on every call.
     return _template(name).render(
         **spec.model_dump(),
         call_date=today_call_date(call_date),
+        habilitative=spec.habilitative,
         phase=phase,
     )
