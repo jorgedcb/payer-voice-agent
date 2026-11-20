@@ -1,8 +1,9 @@
 """Assertions and turn helpers for navigator behavior."""
 
 import json
+import re
 
-from support.calls import assert_wait_is_exclusive, called
+from support.calls import assert_wait_is_exclusive, called, spoken_digits
 
 
 async def hears(session, text: str, *, forbid: tuple[str, ...] = ()):
@@ -82,3 +83,23 @@ def assert_waited(result) -> None:
     assert presses(result) == [], f"pressed instead of waiting: {presses(result)}"
     assert not any(ev.type == "agent_handoff" for ev in result.events)
     result.expect.contains_function_call(name="wait")
+
+
+# Whole words: "in-person" or "personal" is not a request for one.
+_A_PERSON = re.compile(r"(?<![\w-])(representative|agent|person)s?(?![\w-])")
+
+
+def asks_for_a_person(result) -> bool:
+    """The agent asked for a representative this turn."""
+    return bool(_A_PERSON.search(spoken(result).lower()))
+
+
+def states_the_reason(result) -> bool:
+    """The agent said it is calling about benefits or eligibility."""
+    words = spoken(result).lower()
+    return "benefit" in words or "eligib" in words
+
+
+def keyed(result) -> str:
+    """The digits keyed this turn, without a closing pound or star."""
+    return spoken_digits("".join("".join(keys) for keys in presses(result)))

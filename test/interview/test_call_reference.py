@@ -173,10 +173,24 @@ async def test_invalid_name_is_refused(
 async def test_composed_reference_cannot_add_an_initial() -> None:
     task = make_task("My name is Megan.", "The reference is my name and today's date.")
     await task.update_representative_name("Megan")
-    with pytest.raises(ToolError, match="name as recorded"):
-        await task.update_call_reference("Megan S 09/12/2026")
-    await task.update_call_reference("Megan 09/12/2026")
+    reply = await task.update_call_reference("Megan S 09/12/2026")
     assert task.current_reference == "Megan 09/12/2026"
+    assert '"Megan 09/12/2026"' in reply
+
+
+async def test_composed_reference_keeps_the_initial_given() -> None:
+    task = make_task("Jamie R.", "The reference is my name and today's date.")
+    await task.update_representative_name("Jamie", "R")
+    await task.update_call_reference("Jamie 09/12/2026")
+    assert task.current_reference == "Jamie R 09/12/2026"
+
+
+async def test_composed_reference_names_the_representative() -> None:
+    task = make_task("Jamie R.", "The reference is my name and today's date.")
+    await task.update_representative_name("Jamie", "R")
+    with pytest.raises(ToolError, match='"Jamie R 09/12/2026"'):
+        await task.update_call_reference("Alex 09/12/2026")
+    assert task.current_reference is None
 
 
 async def test_declined_name_does_not_hold_the_call() -> None:

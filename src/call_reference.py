@@ -43,6 +43,11 @@ def _single_letter(word: str) -> bool:
     return len(word) == 1 and word.isalpha()
 
 
+def _name_words(name: str) -> list[str]:
+    """A name's words, without the case and punctuation speech recognition varies."""
+    return re.sub(r"[.,]", " ", name).upper().split()
+
+
 def _said_initial(heard: str, first_name: str, initial: str) -> bool:
     """Whether the line's words give this initial: as a letter on its own ("S",
     "S."), its phonetic word ("sierra"), or a last name starting with it after
@@ -175,10 +180,21 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
                 "Empty reference. Ask the representative for the call reference."
             )
         if date_found := _COMPOSED_DATE.search(reference):
-            # A composed reference repeats the name; an initial in it must be one
-            # the representative said, like the name's own.
-            name_part = reference[: date_found.start()].split()
-            if any(_single_letter(w) and w.upper() != self._initial for w in name_part):
+            # A composed reference repeats the name, and it is the name as recorded:
+            # the model has both added an initial nobody said and dropped one that
+            # was said, so the recorded one replaces whatever initial it wrote.
+            name_part = _name_words(reference[: date_found.start()])
+            if self._first_name is not None:
+                if [w for w in name_part if not _single_letter(w)] != _name_words(
+                    self._first_name
+                ):
+                    raise ToolError(
+                        "The name in a composed reference is the representative's name "
+                        f'as recorded. Call update_call_reference with "'
+                        f'{self.representative_name} {date_found.group()}".'
+                    )
+                reference = f"{self.representative_name} {date_found.group()}"
+            elif any(_single_letter(w) for w in name_part):
                 raise ToolError(
                     "The name in a composed reference is the representative's name as "
                     "recorded with update_representative_name, with no other initial."
@@ -196,8 +212,9 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
         # its date because grouped codes can also contain spaces.
         if _COMPOSED_DATE.search(reference):
             read_back = (
-                "Read it back with the name said naturally and the date with the month "
-                "named, then ask whether it is correct."
+                f'The reference is "{reference}". Read it back with the name said '
+                "naturally and the date with the month named, then ask whether it is "
+                "correct."
             )
         else:
             read_back = (

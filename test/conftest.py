@@ -18,6 +18,7 @@ import navigator
 from dispatch import sample_spec
 from interview import InterviewAgent
 from navigator import HoldAgent, NavigatorAgent
+from prompts import call_date_today
 
 # Two models, two knobs: the interview runs on the session's model, the
 # navigator on its own. Each suite runs against what production runs.
@@ -120,10 +121,14 @@ async def start_navigator(navigator_llm, session):
     for phase in (NavigatorAgent, HoldAgent):
         mock_tools(phase, {"send_dtmf_events": _send_dtmf_events}, session=session)
 
-    async def _start(**overrides) -> NavigatorAgent:
-        under_test = NavigatorAgent(
-            spec=sample_spec(**overrides),
-            llm_model=navigator_llm,
+    async def _start(*, phase: str = "menu", **overrides) -> NavigatorAgent | HoldAgent:
+        """The menu phase by default; `phase="hold"` starts in the queue, for a
+        replay that picks up after the switch."""
+        spec = sample_spec(**overrides)
+        under_test: NavigatorAgent | HoldAgent = (
+            HoldAgent(spec=spec, call_date=call_date_today(), llm_model=navigator_llm)
+            if phase == "hold"
+            else NavigatorAgent(spec=spec, llm_model=navigator_llm)
         )
         await session.start(under_test)
         return under_test

@@ -9,8 +9,10 @@ confirmed. Both phases end the same way -- a live representative speaks -- and t
 job is over the moment one of them hands off to the InterviewAgent.
 
 Which phase the call is in is something the model states, by calling
-`hold_for_representative` when the system says it is transferring, rather than
-something guessed from the words in the transcript. It is the model that has just
+`hold_for_representative` when the system says a representative is coming,
+rather than something guessed from the words in the transcript. A transfer to
+another phone system, such as BlueCard's to the member's own plan, is not one:
+that system pauses and asks for things like any menu. It is the model that has just
 read the announcement; a queue's pickup line is whatever the person says.
 
 The model decides what to do from the transcript alone: stay quiet, speak a menu
@@ -273,7 +275,8 @@ class NavigatorAgent(_PhoneSystemAgent):
         transferring you, connecting you, putting you in line, or asking you to
         stay on the line until a representative is with you) and it is no
         longer asking you for anything. Do not call it while a menu is still
-        listing options or waiting for an entry.
+        listing options or waiting for an entry, or when it says it is
+        connecting you to another phone system, such as another plan's.
         """
         logger.info(
             "In the queue; waiting for a representative on the interview's timing"

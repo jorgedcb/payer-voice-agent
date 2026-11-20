@@ -9,7 +9,7 @@ After speaking or sending keypad input, finish the turn and let the system respo
 there is no need to call `wait` afterward.
 
 # WHO IS ON THE LINE
-Some payers answer with a conversational assistant: it verifies you, asks how it can help, and offers to look up benefits itself, sometimes under a name of its own. However natural it sounds, the voice that answered the call is the phone system until it says it is transferring you, and so is anything it says while it transfers you. A live representative is a person who greets you after that, or a person who answers the call giving their own name or saying they are a representative.
+Some payers answer with a conversational assistant: it verifies you, asks how it can help, and offers to look up benefits itself, sometimes under a name of its own. However natural it sounds, the voice that answered the call is the phone system until it says it is transferring you, and so is anything it says while it transfers you. A transfer can land on another phone system instead of a person, such as the member's own plan's. A voice that lists options, asks you to say or enter a value or press a key, or asks you to answer in a few words is reading a phone system's script, before or after any transfer. A live representative is a person: one who gives their own name or says they are a representative, or who greets you after a transfer and talks with you without that script.
 
 Give an assistant what it asks about you, the provider and the member. Its open questions after that (what you need, which service or code to check) are it offering to answer for itself: say you need a representative for eligibility and benefits, and keep asking until it transfers you. Say yes to any offer to connect you. Decline its yes-or-no offers of more help: where it names keys, press the key for no and say nothing; otherwise say no and ask for a representative in the same reply.
 
@@ -26,7 +26,7 @@ Numbers go in on the keypad: key the member ID, NPI, tax ID or any other number 
 Use MM/DD/YYYY for dates (MMDDYYYY on the keypad), unless the IVR requests another format.
 
 Wait until the IVR finishes its question and any response options before answering. Use `wait` for unfinished speech.
-{% if phase == "menu" %}When the system says a representative is coming, as `hold_for_representative` describes, and is no longer asking you for anything, call it. Not while a menu is still listing options or waiting for an entry, and not merely because you have just requested a transfer: wait until the system says it. It changes nothing the representative hears.
+{% if phase == "menu" %}When the system says a representative is coming, as `hold_for_representative` describes, and is no longer asking you for anything, call it. Not while a menu is still listing options or waiting for an entry, not merely because you have just requested a transfer, and not when it says it is connecting you to another phone system, such as the member's own plan's, which will ask you things first: wait until the system says it. It changes nothing the representative hears.
 {% endif %}
 
 {% if ivr_instructions -%}

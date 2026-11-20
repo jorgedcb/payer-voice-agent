@@ -17,11 +17,16 @@ your call", and a person introduces themselves by name.
 The assistant's lines are from those calls; identifiers are synthetic.
 """
 
-import re
-
 import pytest
 from support.calls import AETNA_PATIENT, called, replay, show_response, spoken_digits
-from support.navigator import hears, presses, spoken
+from support.navigator import (
+    asks_for_a_person,
+    hears,
+    keyed,
+    presses,
+    spoken,
+    states_the_reason,
+)
 
 from navigator import HoldAgent
 
@@ -114,23 +119,6 @@ TO_IDENTIFIED = [
 WITH_THE_ASSISTANT = ("representative_answered", "end_call", "hold_for_representative")
 # Once it says it is connecting you, waiting is right; a handoff is not yet.
 BEING_TRANSFERRED = ("representative_answered", "end_call")
-
-# Whole words: "in-person" or "personal" is not a request for one.
-A_PERSON = re.compile(r"(?<![\w-])(representative|agent|person)s?(?![\w-])")
-
-
-def asks_for_a_person(result) -> bool:
-    return bool(A_PERSON.search(spoken(result).lower()))
-
-
-def states_the_reason(result) -> bool:
-    words = spoken(result).lower()
-    return "benefit" in words or "eligib" in words
-
-
-def keyed(result) -> str:
-    """The digits keyed this turn, without a closing pound or star."""
-    return spoken_digits("".join("".join(keys) for keys in presses(result)))
 
 
 def gives_the_date_of_birth(result) -> bool:

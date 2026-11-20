@@ -16,8 +16,10 @@ the turn-taking settings match what the line is doing at that moment.
    pause before acting. From the transcript alone it decides to stay quiet, say
    a menu option, key digits over DTMF, or hand off. Nothing second-guesses the
    model; the transcript is the only input.
-2. **Hold** (`HoldAgent`, same file). Once the system says it is transferring,
-   nothing pauses any more: the next voice is a person finishing a sentence. The
+2. **Hold** (`HoldAgent`, same file). Once the system says a representative is
+   coming, nothing pauses any more: the next voice is a person finishing a
+   sentence. A transfer to another phone system (BlueCard's to the member's own
+   plan) stays in the navigator, since that system pauses and asks like a menu. The
    model declares this transition by calling a tool, rather than the code
    guessing it from keywords, and the wait drops to conversational timing.
 3. **Interview** (`src/interview.py`, `src/prompts/verification.md`). Reached

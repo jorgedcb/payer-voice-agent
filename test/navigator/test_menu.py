@@ -492,15 +492,25 @@ async def test_unfinished_menu_waits(session, start_navigator) -> None:
     assert_waited(result)
 
 
+@pytest.mark.parametrize(
+    "announcement",
+    [
+        pytest.param(
+            "Please hold while I transfer your call to the next available "
+            "representative.",
+            id="to-a-representative",
+        ),
+        # Names no representative and no other phone system: a transfer that
+        # is not to another system's menu is to a person.
+        pytest.param("Please hold while I transfer your call.", id="bare"),
+    ],
+)
 async def test_transfer_announcement_moves_to_the_queue(
-    session, start_navigator
+    session, start_navigator, announcement
 ) -> None:
     await start_navigator()
 
-    result = await hears(
-        session,
-        "Please hold while I transfer your call to the next available representative.",
-    )
+    result = await hears(session, announcement)
 
     assert_moved_to_the_queue(result)
 
