@@ -7,7 +7,7 @@ is no pushback: the goal is not to be taken for one, and a refusal is final.
 """
 
 import pytest
-from support.calls import replay, show_response
+from support.calls import closing_started, end_call_reasons, replay, show_response
 
 PICKUP = [
     (
@@ -42,7 +42,10 @@ async def test_a_refusal_ends_the_call(session, start_assistant, refusal) -> Non
     result = await session.run(user_input=refusal)
     show_response(refusal, result)
 
-    assert called(result, "end_call"), "a refusal to deal with an AI ends the call"
+    assert closing_started(session, result), (
+        "a refusal to deal with an AI ends the call"
+    )
+    assert end_call_reasons(result)[-1] == "call_cannot_continue"
 
 
 # The representative asked this after verifying the caller's name, callback

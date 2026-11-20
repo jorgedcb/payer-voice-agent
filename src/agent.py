@@ -25,6 +25,7 @@ import interview
 import navigator
 import prompts
 import report
+import topics
 from dispatch import load_sample_spec, parse_dispatch
 from navigator import NavigatorAgent
 from recording import start_recording
@@ -87,7 +88,8 @@ async def entrypoint(ctx: JobContext):
 
     # Validate both phases before dialing, not minutes later at the handoff.
     prompts.instructions(navigator.PROMPT, spec)
-    prompts.instructions(interview.PROMPT, spec)
+    # The interview's topics too: its end_call gate reads them from the prompt.
+    topics.benefit_topics(prompts.instructions(interview.PROMPT, spec))
     prompts.instructions(call_reference.PROMPT, spec)
 
     # Set up before the session starts, so the pipeline's spans are routed. The room

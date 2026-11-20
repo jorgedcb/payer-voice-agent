@@ -3,7 +3,7 @@ recorded line: get the representative's first name and last initial, then the ca
 reference for today's call, then hand back. Ask nothing else.
 
 Anything the representative already gave earlier in this conversation, record without
-asking again. Otherwise ask for their first name and last initial first, and once you
+asking again, including a statement that no reference can be provided. Otherwise ask for their first name and last initial first, and once you
 have it, ask for the call reference number for today's call.
 
 A reference may be a code, or the representative's name plus today's date, {{ call_date }},

@@ -1,7 +1,8 @@
 """Closing regressions from real calls, with synthetic reference values.
 
 end_call runs CallReferenceTask before shutting down, so the reference is
-collected by the task whatever the model does with the goodbye.
+collected by the task whatever the model does with the goodbye. A finished
+verification ends only after check_topics found every benefit topic settled.
 """
 
 import pytest
@@ -9,6 +10,9 @@ from support.calls import (
     AETNA_ALL_TOPICS_ANSWER,
     AETNA_ALL_TOPICS_CALL,
     AETNA_ALL_TOPICS_PATIENT,
+    AETNA_EARLY_CLOSING_ANSWER,
+    AETNA_EARLY_CLOSING_CALL,
+    AETNA_EARLY_CLOSING_PATIENT,
     AETNA_OUT_OF_STATE_ANSWER,
     AETNA_OUT_OF_STATE_CALL,
     AETNA_OUT_OF_STATE_PATIENT,
@@ -16,8 +20,11 @@ from support.calls import (
     AETNA_VISIT_LIMITS_ANSWER,
     AETNA_VISIT_LIMITS_CALL,
     AETNA_VISIT_LIMITS_PATIENT,
+    all_settled,
     assert_yields_turn,
     called,
+    closing_started,
+    end_call_reasons,
     replay,
     show_response,
 )
@@ -179,9 +186,10 @@ async def test_failed_transfer_with_no_way_to_continue_starts_closing(
     )
     result = await session.run(user_input=user_input)
     show_response(user_input, result)
-    assert called(result, "end_call"), (
+    assert closing_started(session, result), (
         "An explicitly failed transfer must not leave the agent waiting."
     )
+    assert end_call_reasons(result)[-1] == "call_cannot_continue"
 
 
 @pytest.mark.asyncio
@@ -197,10 +205,6 @@ async def test_failed_transfer_with_no_way_to_continue_starts_closing(
             "medical-necessity review is required, or whether the provider is in or "
             "out of network (its answer was cut off)",
             id="after-visit-limits",
-            # 2026-11-17: closes early in 1 of 5 runs on CI, as on the 2026-11-09
-            # and 2026-11-11 nightlies; the same gap as after-out-of-state below.
-            # Measured nightly.
-            marks=pytest.mark.quarantine,
         ),
         pytest.param(
             AETNA_OUT_OF_STATE_PATIENT,
@@ -212,10 +216,6 @@ async def test_failed_transfer_with_no_way_to_continue_starts_closing(
             "maximum, whether a medical-necessity review is required, or how "
             "out-of-network reimbursement is calculated",
             id="after-out-of-state",
-            # 2026-10-19: still closes early after this transfer in 5 of 20 runs
-            # with the prompt's closing rule (6 of 20 without it); topics tracked
-            # in code fixed it but cost a model call per answer. Measured nightly.
-            marks=pytest.mark.quarantine,
         ),
     ],
 )
@@ -231,9 +231,11 @@ async def test_closing_waits_for_open_benefit_topics(
     result = await session.run(user_input=last_answer)
     show_response(last_answer, result)
 
-    assert not called(result, "end_call"), (
+    # A refused end_call is the gate working; only a closing that starts fails.
+    assert not closing_started(session, result), (
         "Benefit topics are still open; the call must not start closing."
     )
+    assert session.current_agent is agent
     await result.expect.contains_message(role="assistant").judge(
         llm,
         intent=(
@@ -273,6 +275,57 @@ async def test_closing_question_follows_the_last_benefit_topic(
     )
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("more", "last_answer", "open_topics"),
+    [
+        pytest.param(
+            [],
+            AETNA_EARLY_CLOSING_ANSWER,
+            "how many visits have been used, ",
+            id="hard-maximum",
+        ),
+        pytest.param(
+            [
+                ("user", AETNA_EARLY_CLOSING_ANSWER),
+                ("assistant", "Got it. And how many visits have been used so far?"),
+            ],
+            "None used, all sixty are still available.",
+            "",
+            id="visits-used",
+        ),
+    ],
+)
+async def test_ending_with_topics_open_goes_back_to_them(
+    session, start_assistant, llm, more, last_answer, open_topics
+):
+    # An Aetna call on 2026-11-19 asked the closing question with topics still open,
+    # followed up on the visit limit, and ended the call at the hard-maximum answer.
+    # A turn later, only topics after the visit limit are left.
+    agent = await start_assistant(**(AETNA_PT_CLINIC | AETNA_EARLY_CLOSING_PATIENT))
+    await replay(agent, AETNA_EARLY_CLOSING_CALL + more)
+
+    result = await session.run(user_input=last_answer)
+    show_response(last_answer, result)
+
+    assert not ended(result)
+    assert agent.call_reference is None
+    assert session.current_agent is agent, "The closing task must not start."
+    await result.expect.contains_message(role="assistant").judge(
+        llm,
+        intent=(
+            "Keeps the benefits verification going with a question about a specific "
+            f"benefit or plan detail, such as {open_topics}whether the out-of-pocket "
+            "maximum applies to physical therapy, whether the deductible counts "
+            "toward the out-of-pocket maximum, the medical-necessity review, or how "
+            "out-of-network reimbursement is calculated. Any wording is fine, and a "
+            "brief acknowledgment may come first. It is not the closing question "
+            "about other limitations or exclusions, it does not ask for the "
+            "representative's name or a reference number, and it does not say goodbye."
+        ),
+    )
+
+
 def ended(result) -> bool:
     return any(
         ev.type == "function_call_output"
@@ -285,7 +338,7 @@ def ended(result) -> bool:
 async def at_closing_task(session, start_assistant):
     """Run to the point where the last interview answer made end_call start the task."""
     agent = await start_assistant()
-    await replay(agent, CLOSING)
+    await replay(agent, [all_settled(agent), *CLOSING])
     result = await session.run(user_input=LAST_ANSWER)
     show_response(LAST_ANSWER, result)
     result.expect.contains_function_call(name="end_call")

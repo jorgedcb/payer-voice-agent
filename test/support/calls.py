@@ -1747,6 +1747,221 @@ AETNA_ALL_TOPICS_CALL = [
 AETNA_ALL_TOPICS_ANSWER = "We are no longer providing reimbursement rate."
 
 
+# 2026-11-19, a provider-network call: prior authorization on file for both
+# networks, the provider out of network, and the read-out volunteered a shared
+# sixty-visit maximum with none used. After the out-of-state answer the agent
+# asked about other limitations or exclusions, followed up on the visit limit,
+# and ended the call: whether the out-of-pocket maximum applies, whether the
+# deductible counts toward it, and the out-of-network reimbursement were never
+# asked. Replayed to the answer before that end_call.
+AETNA_EARLY_CLOSING_PATIENT = {
+    "member_name": "Ivy Chen",
+    "member_id": "W274019583",
+    "member_dob": "1998-05-14",
+    "network_benefit_scope": "provider_network",
+    "auth_required_in_network": False,
+    "auth_required_out_network": False,
+}
+
+AETNA_EARLY_CLOSING_CALL = [
+    (
+        "user",
+        (
+            "Hello? Good afternoon. Thank you for calling us. My name is Dana, your "
+            "customer advocate for today. How may I assist you?"
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Hi Dana, this is Annie, last initial S as in sierra. I'm calling to check "
+            "benefits for one of your members."
+        ),
+    ),
+    (
+        "user",
+        (
+            "And has this checked benefit information of the member without check "
+            "does... may I have to provide us NPI piece?"
+        ),
+    ),
+    (
+        "assistant",
+        "Sure, the NPI is one, nine, zero ... two, eight, four ... six, three, seven, five.",
+    ),
+    ("user", "Wonderful. Thank you so much. One moment."),
+    ("wait", None),
+    ("user", "May I have the provider a new or a video facility you're calling for?"),
+    ("assistant", "The facility name is Harborview Physical Therapy, PC."),
+    ("user", "Yeah. The address of Altice."),
+    (
+        "assistant",
+        (
+            "Sure. The address is four ... West twenty-second street, floor eleven, New "
+            "York, N.Y., one, zero, zero, one, zero."
+        ),
+    ),
+    (
+        "user",
+        "Thank you so much, ma'am. Also, do you remember ID second validate first?",
+    ),
+    (
+        "assistant",
+        (
+            "Yes, the member ID is W as in whiskey, two, seven, four, zero, one, nine, "
+            "five, eight, three."
+        ),
+    ),
+    ("user", "Thank you so much. Let me check with this member IT."),
+    ("wait", None),
+    ("user", "Now the member name, please."),
+    ("assistant", "The member name is Ivy Chen."),
+    ("user", "Date of birth, please."),
+    ("assistant", "May fourteenth, nineteen ninety-eight."),
+    (
+        "user",
+        (
+            "Not sure if I think the member information. for us to come first quickly "
+            "and check that on the policy on it. One moment."
+        ),
+    ),
+    ("wait", None),
+    (
+        "user",
+        (
+            "Alright. I do see here that the policy, the patient's spot. May I know which "
+            "specific benefit are you looking for?"
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "I'm looking for physical therapy benefits for the network this provider is "
+            "in, and I have CPT codes to check when you're ready."
+        ),
+    ),
+    ("user", "Sure. I'm ready."),
+    (
+        "assistant",
+        (
+            "The CPT codes are nine, seven, one, six, one ... nine, seven, one, one, zero "
+            "... nine, seven, one, one, two ... nine, seven, one, four, zero ... and nine, "
+            "seven, five, three, zero. The visits happen in office and via telehealth. "
+            "Did you get all those?"
+        ),
+    ),
+    ("user", "Yes. I can't. And checking."),
+    (
+        "user",
+        (
+            "This one delivery for in network as I've seen on this provider or the "
+            "solicitation shows out of network conversations plan."
+        ),
+    ),
+    (
+        "assistant",
+        "Is this provider in network or out of network for the member's plan?",
+    ),
+    (
+        "user",
+        (
+            "This facility is out of network. This this harbor physical to earth here is "
+            "off of that reconciliation's plan."
+        ),
+    ),
+    (
+        "assistant",
+        (
+            "Okay, thank you. What are the physical therapy benefits for out-of-network "
+            "providers with those codes and places of service? Is every code and place "
+            "covered, and what's the coinsurance, copay, and does a deductible apply?"
+        ),
+    ),
+    ("user", "One moment, please."),
+    ("wait", None),
+    (
+        "user",
+        (
+            "To see how close the providers are all valid and available and also to "
+            "inform if a day for nine seven one six one, just available times limit of "
+            "once every one hundred eighty days. And just also to inform you for the "
+            "benefit."
+        ),
+    ),
+    (
+        "user",
+        (
+            "Then in office, it will be covered fifty percent after the deductible, no co "
+            "pay. Sixty visits maximum per year combined with speech, physical, "
+            "occupational, and spinal spinal medicalation. And that six visits, nothing "
+            "has been used. It's still available sixty visits. And regarding with "
+            "telehealth, telehealth has not started to be covered for out of network. And "
+            "the deductible amount for individual is three thousand. Nothing has been "
+            "measured as of today for out of network. But the way that's for family "
+            "rather, For out of pocket for family is six thousand, I think has been "
+            "matter zero as of today. Once insurance leave this month, all deductibles "
+            "and all per visit deductibles no longer apply."
+        ),
+    ),
+    ("assistant", "Thank you. What is the coverage effective date?"),
+    (
+        "user",
+        (
+            "The coverage effective date is November first two thousand twenty six, and "
+            "there is no termination date and the transfer rate calendar year period."
+        ),
+    ),
+    ("assistant", "Got it. Is the plan self-funded or fully funded?"),
+    ("user", "This is a self funded plan."),
+    ("assistant", "Is coordination of benefits on file for this member?"),
+    ("user", "Let me check a coordination of benefits."),
+    ("wait", None),
+    ("user", "Alright. As per checking here, it is a primary only insurance on file."),
+    ("assistant", "Does the plan cover the member out of state?"),
+    ("user", "Let me check here. Yes."),
+    (
+        "assistant",
+        "Are there any other limitations or exclusions on these benefits I should know about?",
+    ),
+    (
+        "user",
+        (
+            "Hello, therefore, modalities per day. We need medical associate to review "
+            "out of the twenty fifth visits."
+        ),
+    ),
+    ("assistant", "Thank you. Is that a hard or soft maximum on the visit limit?"),
+]
+
+AETNA_EARLY_CLOSING_ANSWER = "Alright. Hard marks."
+
+
+def all_settled(agent) -> tuple[str, dict[str, dict[str, str]]]:
+    """A check_topics call, for `replay`, that finds every topic answered."""
+    mark = {"status": "answered", "evidence": "Stated by the representative."}
+    return ("check_topics", {topic.key: mark for topic in agent.topics})
+
+
+def closing_started(session, result) -> bool:
+    """Whether end_call got past its gate: the reference task runs, or the call ended."""
+    from call_reference import CallReferenceTask
+
+    return isinstance(session.current_agent, CallReferenceTask) or any(
+        ev.type == "function_call_output"
+        and ev.item.name == "end_call"
+        and not ev.item.is_error
+        for ev in result.events
+    )
+
+
+def end_call_reasons(result) -> list[str]:
+    return [
+        json.loads(ev.item.arguments).get("reason")
+        for ev in result.events
+        if ev.type == "function_call" and ev.item.name == "end_call"
+    ]
+
+
 async def replay(under_test, history) -> None:
     """Seed the agent with a conversation exactly as the model would have seen it.
 
@@ -1754,6 +1969,8 @@ async def replay(under_test, history) -> None:
     becomes a message. Anything else is one of the agent's own tool calls,
     with the empty result every navigator tool returns: `send_dtmf_events`
     takes the keys as a string, the other tools their text or None.
+    `check_topics` takes its marks and runs on the agent, so the agent's state
+    and the result the model saw agree.
     """
     chat_ctx = ChatContext()
     for n, (kind, payload) in enumerate(history):
@@ -1761,7 +1978,13 @@ async def replay(under_test, history) -> None:
             chat_ctx.add_message(role=kind, content=payload)
             continue
         call_id = f"call_{n}"
-        if kind == "send_dtmf_events":
+        output = ""
+        if kind == "check_topics":
+            arguments = json.dumps(payload)
+            # The agent counts the representative's turns before the check.
+            await under_test.update_chat_ctx(chat_ctx)
+            output = under_test.check_topics(payload)
+        elif kind == "send_dtmf_events":
             arguments = json.dumps({"events": list(payload)})
         elif payload is not None:
             arguments = json.dumps({"text": payload})
@@ -1772,7 +1995,7 @@ async def replay(under_test, history) -> None:
         )
         chat_ctx.insert(
             llm.FunctionCallOutput(
-                call_id=call_id, name=kind, output="", is_error=False
+                call_id=call_id, name=kind, output=output, is_error=False
             )
         )
     await under_test.update_chat_ctx(chat_ctx)

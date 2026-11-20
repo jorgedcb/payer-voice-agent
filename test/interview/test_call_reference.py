@@ -173,7 +173,7 @@ async def test_end_call_collects_the_reference_before_shutting_down() -> None:
 
     agent._end_call_tool._end_call = AsyncMock(side_effect=shutdown)
     with patch.object(InterviewAgent, "_collect_call_reference", side_effect=collect):
-        assert await agent.end_call(MagicMock()) == "bye"
+        assert await agent.end_call(MagicMock(), reason="call_cannot_continue") == "bye"
 
     assert order == ["collect", "shutdown"]
     assert agent.call_reference == CallReferenceResult(reference="AB73921")
@@ -191,16 +191,20 @@ async def test_end_call_does_not_shut_down_if_collection_fails() -> None:
         ),
         pytest.raises(ToolError),
     ):
-        await agent.end_call(MagicMock())
+        await agent.end_call(MagicMock(), reason="call_cannot_continue")
     shutdown.assert_not_awaited()
     assert agent.call_reference is None
 
 
-def test_interview_exposes_wait_and_gated_end_call() -> None:
+def test_interview_exposes_wait_topic_check_and_gated_end_call() -> None:
     agent = InterviewAgent(spec=load_sample_spec())
     # Reference collection still belongs to the closing task; the interview
-    # can either wait or enter closing through its guarded end_call.
-    assert {tool.info.name for tool in agent.tools} == {"wait", "end_call"}
+    # can wait, check its topics, or enter closing through its guarded end_call.
+    assert {tool.info.name for tool in agent.tools} == {
+        "wait",
+        "check_topics",
+        "end_call",
+    }
 
 
 async def test_task_gets_the_interview_call_date() -> None:
@@ -221,13 +225,13 @@ async def test_second_end_call_while_closing_is_refused() -> None:
     async def slow_collect() -> CallReferenceResult:
         started()
         with pytest.raises(ToolError, match="already in progress"):
-            await agent.end_call(MagicMock())
+            await agent.end_call(MagicMock(), reason="call_cannot_continue")
         return CallReferenceResult(reference="AB73921")
 
     with patch.object(
         InterviewAgent, "_collect_call_reference", side_effect=slow_collect
     ):
-        assert await agent.end_call(MagicMock()) == "bye"
+        assert await agent.end_call(MagicMock(), reason="call_cannot_continue") == "bye"
     started.assert_called_once()
 
 

@@ -142,6 +142,7 @@ async def test_closed_call_reports_agent_closing(report_context, s3_client):
         "reference": "AB73921",
         "unavailable_statement": None,
         "representative_name": "Jamie R",
+        "reason": "verification_complete",
     }
     ctx.closing = closing
     expected = dict(payload, agent_closing=closing)

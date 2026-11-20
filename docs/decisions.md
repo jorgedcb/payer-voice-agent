@@ -174,6 +174,39 @@ the formatted read-back avoids asking the model to derive pronunciation.
 [`test_call_reference.py`](../test/interview/test_call_reference.py), and
 [`test_closing.py`](../test/interview/test_closing.py).
 
+## Benefit topics are checked before closing
+
+**Decision:** the closing question comes from `check_topics`, a tool that asks the
+model to mark every benefit topic as answered, unavailable (the representative
+cannot or will not give it), skipped or open. A mark counts only with its evidence:
+the words from the line, or the fact on file or skip condition that applies. The
+topics are the `###` headings of the rendered prompt, read again before dialing, so
+the tool and the prompt list the same ones. `end_call` with reason
+`verification_complete` is refused until a check finds nothing open. An ending in
+the same turn as that check is held once and sent to the closing question; only
+once, because the model may have asked and heard it before checking.
+`call_cannot_continue` (a refusal, a failed transfer) ends without a check, but not
+in the same turn a finished verification was refused. The reason is logged with the
+topics the last check left open, and stamped on the report's closing.
+
+**History:** with a prompt rule to check the topics against the conversation
+before closing, GPT-4.1 still asked about other limitations or exclusions with
+topics never asked in 5 of 20 runs of the `after-out-of-state` replay, and a
+2026-11-19 Aetna call closed that way in production, leaving the out-of-pocket
+questions and the out-of-network reimbursement unasked. Tracking topics in code
+after every answer also fixed it, but cost a model call per answer; the check
+costs one model step when the model believes it is done, about four seconds for
+that turn. Marks without the representative's words still settled unasked
+topics in about one run in ten of the `after-visit-limits` replay. Gemma, the
+fallback, rarely calls the check on its own; the refused unchecked ending sends it
+there, and it reached the reference step in every traced run, though it re-asked an
+answered topic in 2 of 4 runs of the last-topic replay.
+
+**Code and coverage:** [`topics.py`](../src/topics.py),
+[`interview.py`](../src/interview.py),
+[`test_topics.py`](../test/interview/test_topics.py), and
+[`test_closing.py`](../test/interview/test_closing.py).
+
 ## Traces are grouped by call ID
 
 **Decision:** stamp `langfuse.session.id` with a span processor in addition to
