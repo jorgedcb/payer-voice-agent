@@ -335,10 +335,13 @@ def ended(result) -> bool:
     )
 
 
-async def at_closing_task(session, start_assistant):
-    """Run to the point where the last interview answer made end_call start the task."""
-    agent = await start_assistant()
-    await replay(agent, [all_settled(agent), *CLOSING])
+async def at_closing_task(session, start_assistant, earlier=(), **overrides):
+    """Run to the point where the last interview answer made end_call start the task.
+
+    `earlier` is conversation to replay before the passed topic check.
+    """
+    agent = await start_assistant(**overrides)
+    await replay(agent, [*earlier, all_settled(agent), *CLOSING])
     result = await session.run(user_input=LAST_ANSWER)
     show_response(LAST_ANSWER, result)
     result.expect.contains_function_call(name="end_call")
@@ -359,6 +362,38 @@ async def test_last_answer_hands_the_closing_to_the_task(session, start_assistan
     assert not ended(result)
     await result.expect.contains_message(role="assistant").judge(
         llm, intent="Asks for the call reference number for today's call."
+    )
+
+
+@pytest.mark.asyncio
+async def test_first_name_alone_is_not_given_the_callers_initial(
+    session, start_assistant, llm
+):
+    # From a real call: the representative gave only a first name, the same as
+    # the caller's, and was recorded with the initial from the caller's own
+    # introduction earlier on the line.
+    introduced = [
+        ("user", "Thank you for calling. Who am I speaking with?"),
+        ("assistant", "Hi, this is Megan, last initial S as in sierra."),
+        ("user", "Thanks, Megan. What can I help you with?"),
+    ]
+    await at_closing_task(
+        session,
+        start_assistant,
+        introduced,
+        caller_first_name="Megan",
+        caller_last_initial="S",
+    )
+    result = await session.run(user_input="My name is Megan.")
+    show_response("My name is Megan.", result)
+    assert session.current_agent.representative_name == "Megan"
+    assert not ended(result)
+    await result.expect.contains_message(role="assistant").judge(
+        llm,
+        intent=(
+            "Asks for the representative's last initial or the call reference. "
+            "Does not state a last initial for the representative."
+        ),
     )
 
 

@@ -8,7 +8,7 @@ from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from livekit.agents import ToolError
+from livekit.agents import ToolError, llm
 from livekit.agents.beta.tools import EndCallTool
 
 from call_reference import CallReferenceResult, CallReferenceTask
@@ -18,8 +18,12 @@ from interview import InterviewAgent
 CALL_DATE = date(2026, 9, 12)
 
 
-def make_task() -> CallReferenceTask:
-    return CallReferenceTask(load_sample_spec(), call_date=CALL_DATE)
+def make_task(*heard: str) -> CallReferenceTask:
+    """The task with what the representative has said so far."""
+    chat_ctx = llm.ChatContext()
+    for text in heard:
+        chat_ctx.add_message(role="user", content=text)
+    return CallReferenceTask(load_sample_spec(), call_date=CALL_DATE, chat_ctx=chat_ctx)
 
 
 def result(task: CallReferenceTask) -> CallReferenceResult:
@@ -55,7 +59,8 @@ async def test_confirm_tool_appears_only_after_a_value_is_recorded() -> None:
 
 
 async def test_composed_reference_is_read_as_words_not_spelled() -> None:
-    task = make_task()
+    task = make_task("Jamie R.")
+    await task.update_representative_name("Jamie", "R")
     reply = await task.update_call_reference("Jamie R 09/12/2026")
     assert "as in" not in reply
     assert "month named" in reply
@@ -70,8 +75,8 @@ async def test_a_code_spelled_in_groups_is_still_spelled_back() -> None:
 
 
 async def test_confirmation_completes_with_the_reference_and_name() -> None:
-    task = make_task()
-    await task.update_representative_name("Jamie R")
+    task = make_task("Jamie R.")
+    await task.update_representative_name("Jamie", "R")
     await task.update_call_reference("AB73921")
     confirm = next(t for t in task.tools if t.info.name == "confirm_call_reference")
 
@@ -83,14 +88,14 @@ async def test_confirmation_completes_with_the_reference_and_name() -> None:
 
 
 async def test_confirmation_requires_the_name() -> None:
-    task = make_task()
+    task = make_task("Jamie R.")
     await task.update_call_reference("AB73921")
     confirm = next(t for t in task.tools if t.info.name == "confirm_call_reference")
 
     assert "update_representative_name" in (await confirm() or "")
     assert not task.done()
 
-    await task.update_representative_name("Jamie R")
+    await task.update_representative_name("Jamie", "R")
     assert await confirm() is None
     assert result(task).representative_name == "Jamie R"
 
@@ -102,12 +107,76 @@ async def test_no_reference_completes_without_a_name() -> None:
     assert result(task).representative_name is None
 
 
-@pytest.mark.parametrize("name", [" ", "Jamie", "R"])
-async def test_incomplete_name_is_refused(name: str) -> None:
-    task = make_task()
-    with pytest.raises(ToolError, match="first name and the last initial"):
-        await task.update_representative_name(name)
+async def test_first_name_alone_is_recorded_and_the_initial_asked_once() -> None:
+    task = make_task("My name is Megan.")
+    assert "last initial" in await task.update_representative_name("Megan")
+    assert task.representative_name == "Megan"
+    assert "last initial" not in await task.update_representative_name("Megan")
+    assert task.representative_name == "Megan"
+
+
+async def test_initial_given_later_completes_the_name() -> None:
+    task = make_task("My name is Jamie.", "R as in Romeo.")
+    await task.update_representative_name("Jamie")
+    await task.update_representative_name("Jamie", " r .")
+    assert task.representative_name == "Jamie R"
+
+
+async def test_a_later_record_without_the_initial_keeps_it() -> None:
+    # A spelling correction of the first name must not drop the initial or ask
+    # for it again.
+    task = make_task("Jamie R.", "It's Jaime, J A I M E.")
+    await task.update_representative_name("Jamie", "R")
+    reply = await task.update_representative_name("Jaime")
+    assert task.representative_name == "Jaime R"
+    assert "last initial" not in reply
+
+
+@pytest.mark.parametrize(
+    "heard",
+    ["Megan S.", "Megan, S as in sierra.", "It's Megan Smith.", "Last initial s."],
+)
+async def test_an_initial_the_line_gave_is_recorded(heard: str) -> None:
+    task = make_task(heard)
+    await task.update_representative_name("Megan", "S")
+    assert task.representative_name == "Megan S"
+
+
+@pytest.mark.parametrize("heard", ["My name is Megan.", "It's Megan, how's it going?"])
+async def test_an_initial_the_line_never_gave_is_refused(heard: str) -> None:
+    # The real failure: the model filled a missing initial with the caller's own.
+    task = make_task(heard)
+    with pytest.raises(ToolError, match="has not said S"):
+        await task.update_representative_name("Megan", "S")
     assert task.representative_name is None
+
+
+async def test_an_accented_initial_is_kept() -> None:
+    task = make_task("Soy Ana Ñ.")
+    await task.update_representative_name("Ana", "ñ")
+    assert task.representative_name == "Ana Ñ"
+
+
+@pytest.mark.parametrize(
+    ("first_name", "last_initial"),
+    [(" ", None), ("R", None), ("Jamie R", None), ("Jamie", "Ro"), ("Jamie", "7")],
+)
+async def test_invalid_name_is_refused(
+    first_name: str, last_initial: str | None
+) -> None:
+    task = make_task("Jamie R.")
+    with pytest.raises(ToolError):
+        await task.update_representative_name(first_name, last_initial)
+    assert task.representative_name is None
+
+
+async def test_composed_reference_cannot_add_an_initial() -> None:
+    task = make_task("My name is Megan.", "The reference is my name and today's date.")
+    await task.update_representative_name("Megan")
+    with pytest.raises(ToolError, match="name as recorded"):
+        await task.update_call_reference("Megan S 09/12/2026")
+    await task.update_call_reference("Megan 09/12/2026")
+    assert task.current_reference == "Megan 09/12/2026"
 
 
 async def test_declined_name_does_not_hold_the_call() -> None:
