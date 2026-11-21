@@ -31,7 +31,9 @@ the turn-taking settings match what the line is doing at that moment.
 
 The worker also records room audio to S3 through LiveKit Egress
 (`src/recording.py`) and saves the native session report, stamped with when the
-payer answered and what the closing confirmed (`src/report.py`). A backend owns
+payer answered and what the closing confirmed (`src/report.py`). The report
+leaves out the events that repeat what it already holds: the running usage
+total the SDK records about once a second, and copies of chat history items. A backend owns
 everything after that: reading the report, extracting the benefits, and
 deciding what to do with them.
 

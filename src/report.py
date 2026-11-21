@@ -1,4 +1,4 @@
-"""Save the native LiveKit report; the backend owns consumption and extraction."""
+"""Save the LiveKit session report; the backend owns consumption and extraction."""
 
 import asyncio
 import json
@@ -24,6 +24,17 @@ ANSWERED_AT_KEY = "agent_answered_at"
 # the call reference (or the statement that none exists). Stamped by
 # InterviewAgent.end_call; the backend can trust it over a transcript read.
 CLOSING_KEY = "agent_closing"
+# Events whose content the report already holds: the running usage total
+# (its final value is the report's `usage`) and copies of chat history items.
+# The SDK records the usage total on every metrics tick, about once a second,
+# so with them calls longer than about 70 minutes wrote reports past the 8 MiB
+# the backend reads. Errors, the close event and state changes stay.
+DUPLICATE_EVENT_TYPES = frozenset(
+    {"session_usage_updated", "conversation_item_added", "function_tools_executed"}
+)
+# The most of a report the backend reads (its MAX_REPORT_BYTES, which a backend
+# test checks against this). A larger report is saved but never read.
+MAX_REPORT_BYTES = 8_388_608  # 8 MiB
 
 
 def mark_answered(ctx: JobContext) -> None:
@@ -75,11 +86,22 @@ async def on_session_end(ctx: JobContext) -> None:
     closing_stamp = getattr(ctx, "closing", None)
     try:
         report = ctx.make_session_report().to_dict()
+        report["events"] = [
+            event
+            for event in report.get("events", [])
+            if event.get("type") not in DUPLICATE_EVENT_TYPES
+        ]
         if answered_at is not None:
             report[ANSWERED_AT_KEY] = answered_at
         if closing_stamp is not None:
             report[CLOSING_KEY] = closing_stamp
         body = json.dumps(report, ensure_ascii=False).encode("utf-8")
+        if len(body) > MAX_REPORT_BYTES:
+            logger.warning(
+                "Session report is %d bytes, over the %d the backend reads",
+                len(body),
+                MAX_REPORT_BYTES,
+            )
         key = f"calls/{quote(ctx.room.name, safe='')}/report.json"
         # Boto3 is synchronous; keep storage I/O off the voice worker's event loop.
         await asyncio.to_thread(_upload_report, bucket, key, body)

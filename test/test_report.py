@@ -12,17 +12,20 @@ from report import on_session_end
 @pytest.fixture
 def report_context(monkeypatch):
     monkeypatch.setenv("SESSION_REPORT_BUCKET", "synthetic-reports")
-    # Deliberately includes fields the frontend doesn't need: retain the native artifact.
+    # Deliberately includes fields the frontend doesn't need: the native report is
+    # kept, less only the events that repeat what it already holds.
     payload = {
         "room": "call-123",
         "chat_history": {"items": [{"role": "user", "content": ["Sí, covered."]}]},
-        "events": [{"type": "agent_handoff"}],
+        "events": [{"type": "agent_state_changed"}, {"type": "close"}],
         "audio_recording_path": "recordings/example.ogg",
     }
     ctx = SimpleNamespace(
         is_fake_job=lambda: False,
         room=SimpleNamespace(name="call-123"),
-        make_session_report=Mock(return_value=SimpleNamespace(to_dict=lambda: payload)),
+        make_session_report=Mock(
+            return_value=SimpleNamespace(to_dict=Mock(return_value=payload))
+        ),
     )
     return ctx, payload
 
@@ -205,3 +208,89 @@ def test_stamp_round_trips_on_the_sdk_job_context():
     before = time.time()
     mark_answered(ctx)
     assert before <= getattr(ctx, "answered_at") <= time.time()
+
+
+def _sdk_report(*, events):
+    from livekit.agents import AgentSession, llm
+    from livekit.agents.voice.report import SessionReport
+
+    history = llm.ChatContext()
+    history.add_message(role="assistant", content="What is the deductible?")
+    history.add_message(role="user", content="Five hundred dollars.")
+    return SessionReport(
+        job_id="AJ_synthetic",
+        room_id="RM_synthetic",
+        room="call-123",
+        options=AgentSession().options,
+        events=events(history),
+        chat_history=history,
+        started_at=1_757_600_000.0,
+    )
+
+
+def _sdk_context(native):
+    return SimpleNamespace(
+        is_fake_job=lambda: False,
+        room=SimpleNamespace(name="call-123"),
+        make_session_report=Mock(return_value=native),
+    )
+
+
+async def test_report_keeps_its_events_but_not_what_it_already_holds(monkeypatch):
+    # The SDK records the running usage total about once a second and copies
+    # each chat item into its event log; with those, calls longer than about
+    # 70 minutes wrote reports past what the backend reads.
+    from livekit.agents.metrics.usage import AgentSessionUsage, LLMModelUsage
+    from livekit.agents.voice.events import (
+        AgentStateChangedEvent,
+        CloseEvent,
+        CloseReason,
+        ConversationItemAddedEvent,
+        SessionUsageUpdatedEvent,
+    )
+
+    def events(history):
+        usage = AgentSessionUsage(
+            model_usage=[LLMModelUsage(provider="google", model="synthetic-llm")]
+        )
+        return [
+            SessionUsageUpdatedEvent(usage=usage),
+            *(ConversationItemAddedEvent(item=item) for item in history.items),
+            AgentStateChangedEvent(old_state="listening", new_state="thinking"),
+            SessionUsageUpdatedEvent(usage=usage),
+            CloseEvent(reason=CloseReason.USER_INITIATED),
+        ]
+
+    monkeypatch.setenv("SESSION_REPORT_BUCKET", "synthetic-reports")
+    uploaded = []
+    monkeypatch.setattr(
+        "report._upload_report", lambda bucket, key, body: uploaded.append(body)
+    )
+
+    await on_session_end(_sdk_context(_sdk_report(events=events)))
+
+    [body] = uploaded
+    report = json.loads(body)
+    assert [event["type"] for event in report["events"]] == [
+        "agent_state_changed",
+        "close",
+    ]
+    assert report["close_reason"] == "CR_USER_INITIATED"
+    assert len(report["chat_history"]["items"]) == 2
+
+
+async def test_a_report_the_backend_cannot_read_is_saved_with_a_warning(
+    monkeypatch, caplog
+):
+    monkeypatch.setenv("SESSION_REPORT_BUCKET", "synthetic-reports")
+    monkeypatch.setattr("report.MAX_REPORT_BYTES", 100)
+    uploaded = []
+    monkeypatch.setattr(
+        "report._upload_report", lambda bucket, key, body: uploaded.append(body)
+    )
+
+    await on_session_end(_sdk_context(_sdk_report(events=lambda _history: [])))
+
+    [body] = uploaded
+    assert f"Session report is {len(body)} bytes, over the 100" in caplog.text
+    assert "deductible" not in caplog.text
