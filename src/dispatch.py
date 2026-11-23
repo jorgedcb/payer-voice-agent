@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 # ICD-10 F80-F89, the developmental disorders (autism is F84.0), except F81: a
 # scholastic-skills disorder such as dyslexia is educational, not habilitative.
@@ -32,7 +32,12 @@ class CallSpec(BaseModel):
     tts_voice_id: str | None = None
     member_id: str
     member_name: str
-    member_dob: str
+    # TEMPORARY: also takes `member_date_of_birth`, the name the backend sends
+    # once its rename ships. The agent deploys first; the backend change renames
+    # this field and keeps `member_dob` as the alias for one release.
+    member_dob: str = Field(
+        validation_alias=AliasChoices("member_dob", "member_date_of_birth")
+    )
     # Five digits. Some menus (BCBS Michigan) authenticate the member with it and
     # end the call without it.
     member_zip: str | None = None
