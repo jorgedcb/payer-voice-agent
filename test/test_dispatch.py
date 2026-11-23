@@ -101,24 +101,6 @@ def test_invalid_payload_is_not_replaced_by_sample_data(data):
         prepare(data)
 
 
-def test_the_backend_before_the_rename_still_dispatches():
-    """TEMPORARY, removed with the alias: until the backend that sends
-    `member_date_of_birth` is on prod, it sends `member_dob`."""
-    data = payload()
-    data["member_dob"] = data.pop("member_date_of_birth")
-    spec = prepare(data)
-    assert spec.member_date_of_birth == "1990-01-01"
-    assert "Patient date of birth: 01/01/1990" in prompts.instructions(
-        "navigator", spec
-    )
-    assert "member date of birth: January 1, 1990." in prompts.instructions(
-        "verification", spec
-    )
-    # One sender sends one name; a payload with both is ambiguous.
-    with pytest.raises(ValueError, match="Extra inputs are not permitted"):
-        prepare(payload(member_dob="1990-01-01"))
-
-
 def test_member_zip_reaches_the_navigator_only_when_sent():
     assert "Patient ZIP code: 78701" in prompts.instructions(
         "navigator", prepare(payload())
