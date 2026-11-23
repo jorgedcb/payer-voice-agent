@@ -134,7 +134,7 @@ def show_response(user_input, result):
 AETNA_PATIENT = {
     "member_name": "Rashid Amari",
     "member_id": "W812640935",
-    "member_dob": "2018-05-14",
+    "member_date_of_birth": "2018-05-14",
     "npi": "1477583926",
 }
 
@@ -177,7 +177,7 @@ AETNA_READBACK = "One moment, please. The patient is Richard Amari. Correct?"
 # synthetic stand-ins, numeric like the real ones.
 UHC_PATIENT = {
     "member_id": "907264318",
-    "member_dob": "1987-04-09",
+    "member_date_of_birth": "1987-04-09",
     "npi": "1588694037",
 }
 
@@ -332,7 +332,7 @@ UHC_OFFER_TO_HANG_UP = (
 BCBSM_PATIENT = {
     "member_name": "Marisol Ortega",
     "member_id": "ZZB712408356",
-    "member_dob": "1981-03-17",
+    "member_date_of_birth": "1981-03-17",
     "member_zip": "49503",
     "npi": "1629384750",
 }
@@ -488,7 +488,7 @@ AETNA_PT_CLINIC = {
 AETNA_VISIT_LIMITS_PATIENT = {
     "member_name": "Marcus Bell",
     "member_id": "W418392057",
-    "member_dob": "1984-06-21",
+    "member_date_of_birth": "1984-06-21",
 }
 
 AETNA_VISIT_LIMITS_CALL = [
@@ -819,7 +819,7 @@ AETNA_VISIT_LIMITS_ANSWER = "No, miss."
 AETNA_OUT_OF_STATE_PATIENT = {
     "member_name": "Owen Harper",
     "member_id": "W630925184",
-    "member_dob": "1991-03-03",
+    "member_date_of_birth": "1991-03-03",
 }
 
 AETNA_OUT_OF_STATE_CALL = [
@@ -1345,7 +1345,7 @@ AETNA_OUT_OF_STATE_ANSWER = (
 AETNA_ALL_TOPICS_PATIENT = {
     "member_name": "Lena Ortiz",
     "member_id": "W527183946",
-    "member_dob": "1979-11-08",
+    "member_date_of_birth": "1979-11-08",
 }
 
 AETNA_ALL_TOPICS_CALL = [
@@ -1757,7 +1757,7 @@ AETNA_ALL_TOPICS_ANSWER = "We are no longer providing reimbursement rate."
 AETNA_EARLY_CLOSING_PATIENT = {
     "member_name": "Ivy Chen",
     "member_id": "W274019583",
-    "member_dob": "1998-05-14",
+    "member_date_of_birth": "1998-05-14",
     "network_benefit_scope": "provider_network",
     "auth_required_in_network": False,
     "auth_required_out_network": False,

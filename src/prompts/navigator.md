@@ -46,4 +46,4 @@ Each note applies at the moment it describes; at every other moment, the rules a
 {% if member_zip -%}
 - Patient ZIP code: {{ member_zip }}
 {% endif -%}
-- Patient date of birth: {{ member_dob | us_date }}
+- Patient date of birth: {{ member_date_of_birth | us_date }}

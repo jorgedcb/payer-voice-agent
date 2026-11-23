@@ -33,7 +33,7 @@ from navigator import NavigatorAgent
 PATIENT = {
     "member_name": "Theo Lindqvist",
     "member_id": "ZGP604218375",
-    "member_dob": "2016-03-08",
+    "member_date_of_birth": "2016-03-08",
     # Fails the NPI check digit, so it cannot be anyone's.
     "npi": "1659302785",
     "service_type": "physical_therapy",

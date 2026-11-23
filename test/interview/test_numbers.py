@@ -68,7 +68,7 @@ async def test_date_of_birth_is_read_naturally(
     dob,
     spoken_date,
 ):
-    await start_assistant(member_dob=dob)
+    await start_assistant(member_date_of_birth=dob)
     question = "What is the patient's date of birth?"
     result = await session.run(user_input=question)
     show_response(question, result)

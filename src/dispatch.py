@@ -32,11 +32,12 @@ class CallSpec(BaseModel):
     tts_voice_id: str | None = None
     member_id: str
     member_name: str
-    # TEMPORARY: also takes `member_date_of_birth`, the name the backend sends
-    # once its rename ships. The agent deploys first; the backend change renames
-    # this field and keeps `member_dob` as the alias for one release.
-    member_dob: str = Field(
-        validation_alias=AliasChoices("member_dob", "member_date_of_birth")
+    # TEMPORARY: also takes `member_dob`, the name the backend sent before it
+    # was renamed: tasks of that release keep sending it while this one rolls
+    # out. Remove the alias once the backend that sends `member_date_of_birth`
+    # is on prod.
+    member_date_of_birth: str = Field(
+        validation_alias=AliasChoices("member_date_of_birth", "member_dob")
     )
     # Five digits. Some menus (BCBS Michigan) authenticate the member with it and
     # end the call without it.

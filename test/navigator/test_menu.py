@@ -373,7 +373,7 @@ async def test_payer_notes_change_how_a_value_is_keyed(
 
 
 async def test_enter_date_of_birth(session, start_navigator) -> None:
-    await start_navigator(member_dob="1990-01-23")
+    await start_navigator(member_date_of_birth="1990-01-23")
 
     result = await hears(
         session, "Please enter the patient's date of birth as an eight digit number."

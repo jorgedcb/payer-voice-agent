@@ -39,7 +39,7 @@ async def test_backend_payload_renders_both_agents():
     closing = prompts.instructions("call_reference", spec, call_date=date(2026, 9, 9))
     assert "09/09/2026" in closing
     assert spec.member_id == "W123456789"
-    assert spec.member_dob == "1990-01-01"
+    assert spec.member_date_of_birth == "1990-01-01"
 
 
 @pytest.mark.parametrize(
@@ -101,13 +101,13 @@ def test_invalid_payload_is_not_replaced_by_sample_data(data):
         prepare(data)
 
 
-def test_the_backend_after_the_rename_dispatches():
-    """TEMPORARY, until the backend's rename ships and renames this field:
-    that backend sends `member_date_of_birth`."""
+def test_the_backend_before_the_rename_still_dispatches():
+    """TEMPORARY, removed with the alias: until the backend that sends
+    `member_date_of_birth` is on prod, it sends `member_dob`."""
     data = payload()
-    data["member_date_of_birth"] = data.pop("member_dob")
+    data["member_dob"] = data.pop("member_date_of_birth")
     spec = prepare(data)
-    assert spec.member_dob == "1990-01-01"
+    assert spec.member_date_of_birth == "1990-01-01"
     assert "Patient date of birth: 01/01/1990" in prompts.instructions(
         "navigator", spec
     )
@@ -116,7 +116,7 @@ def test_the_backend_after_the_rename_dispatches():
     )
     # One sender sends one name; a payload with both is ambiguous.
     with pytest.raises(ValueError, match="Extra inputs are not permitted"):
-        prepare(payload(member_date_of_birth="1990-01-01"))
+        prepare(payload(member_dob="1990-01-01"))
 
 
 def test_member_zip_reaches_the_navigator_only_when_sent():
