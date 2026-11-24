@@ -48,6 +48,24 @@ async def test_press_menu_key(session, start_navigator) -> None:
     assert spoken(result) == ""
 
 
+async def test_an_option_for_every_kind_of_provider_is_the_provider_option(
+    session, start_navigator
+) -> None:
+    """The provider is never a hospital, but an option that takes hospitals
+    together with every other provider is still the way to provider services."""
+    await start_navigator()
+
+    result = await hears(
+        session,
+        (
+            "If you are a member, press one. If you are a doctor, hospital, or "
+            "other health care provider, press two."
+        ),
+    )
+
+    assert presses(result) == [["2"]], f"{presses(result)} {spoken(result)!r}"
+
+
 async def test_say_or_enter_npi_uses_dtmf(session, start_navigator) -> None:
     """Opening turn of a live call, with a synthetic provider NPI."""
     npi = "1477583926"

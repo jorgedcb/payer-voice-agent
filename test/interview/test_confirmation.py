@@ -18,7 +18,7 @@ HISTORY = [
     ("user", "Provider services, this is Taylor. Who am I speaking with?"),
     ("assistant", "My name is Annie, last initial S."),
     ("user", "Are you calling from an office or a facility?"),
-    ("assistant", "A facility."),
+    ("assistant", "An office."),
     ("user", "What number can we reach you at if we get disconnected?"),
     ("assistant", "Two zero two, five five five, zero one two three. No extension."),
 ]
@@ -29,7 +29,7 @@ HISTORY = [
     [
         "Let me check that I have this right: two zero two, five five five, zero one two three. No extension, right?",
         "So that's 202-555-0123, no extension, correct?",
-        "And you said Annie, last initial S, calling from a facility, correct?",
+        "And you said Annie, last initial S, calling from an office, correct?",
     ],
 )
 async def test_correct_readback_gets_only_a_brief_confirmation(

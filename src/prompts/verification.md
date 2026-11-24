@@ -167,7 +167,11 @@ exactly, including the pauses.
 {% if tax_id -%}
 - tax ID / TIN: {{ tax_id | speak_tax_id }}.
 {% endif -%}
-- doctor or facility?: {{ 'facility' if npi_type == 'facility' else 'doctor' }}.
+- billing: professional, on the CMS-1500 form. That answers professional or facility, office or
+  facility, and doctor or facility alike: this provider never bills as a facility or on a UB-04.
+  Where the visits happen is a separate question, answered with the places above.
+- provider type / specialty: {{ service_type | service_label }} group practice.
+- group or individual NPI?: the group's.
 - provider / facility name: {{ facility_name }}.
 - address: {{ facility_address }}. In short pieces — street number, street name, suite or unit, city, state, ZIP — pausing after each, numbers digit by digit. Repeat any piece at the same pace.
 - member name: {{ member_name }}. Say it naturally; spell it only when asked, and then letter by letter with the phonetic alphabet.

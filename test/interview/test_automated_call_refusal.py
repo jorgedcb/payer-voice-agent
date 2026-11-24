@@ -56,7 +56,7 @@ IDENTITY_CHECK = PICKUP + [
     ("user", "And where are you calling from?"),
     ("assistant", "I'm calling from Example Physical Therapy."),
     ("user", "Is this an office or facility?"),
-    ("assistant", "It is a facility."),
+    ("assistant", "It's an office."),
     ("user", "And may I have the NPI number?"),
     ("assistant", "One, four, seven ... seven, five, eight ... three, nine, two, six."),
     ("user", "Let me confirm: one four seven seven five eight three nine two six?"),

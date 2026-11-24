@@ -272,3 +272,25 @@ def test_interview_preserves_complete_procedure_codes(codes, spoken):
 def test_the_diagnosis_code_is_kept_as_icd_10_writes_it():
     assert prepare(payload(dx_code=" f84.0 ")).dx_code == "F84.0"
     assert prepare(payload(dx_code="  ")).dx_code == ""
+
+
+@pytest.mark.parametrize(
+    "service_type,label",
+    [
+        ("physical_therapy", "physical therapy"),
+        ("occupational_therapy", "occupational therapy"),
+        ("speech_therapy", "speech therapy"),
+        ("mental_health", "ABA therapy"),
+        ("mental_health_provider_outpatient", "ABA therapy"),
+    ],
+)
+def test_both_agents_know_the_provider_bills_professionally(service_type, label):
+    """Payers ask whether a call is for professional or facility billing; the
+    answer for every clinic is professional, on the CMS-1500."""
+    spec = prepare(payload(service_type=service_type))
+    nav = prompts.instructions("navigator", spec)
+    interview = prompts.instructions("verification", spec)
+    assert f"Provider type: {label} group practice" in nav
+    assert "billing professional claims on the CMS-1500" in nav
+    assert f"provider type / specialty: {label} group practice." in interview
+    assert "billing: professional, on the CMS-1500 form." in interview

@@ -20,6 +20,8 @@ class CallSpec(BaseModel):
 
     payer_phone_number: str
     npi: str
+    # "facility" means an organization's NPI: the backend dials only a group's.
+    # It says nothing about billing, which is professional on every call.
     npi_type: Literal["individual", "facility"]
     tax_id: str | None = None
     facility_name: str

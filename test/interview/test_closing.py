@@ -365,6 +365,7 @@ async def test_last_answer_hands_the_closing_to_the_task(session, start_assistan
     )
 
 
+@pytest.mark.quarantine  # 2026-11-23: rep's name matching the caller's goes unrecorded, 6 in 8 runs on main; measured nightly
 @pytest.mark.asyncio
 async def test_first_name_alone_is_not_given_the_callers_initial(
     session, start_assistant, llm
