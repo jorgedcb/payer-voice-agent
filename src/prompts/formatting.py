@@ -173,6 +173,30 @@ def speak_code(code: str) -> str:
     return ", ".join(parts)
 
 
+def one_at_a_time(identifier: str) -> str | None:
+    """ "CQP730W18265" -> "Charlie Quebec Papa 7 3 0 Whiskey 1 8 2 6 5".
+
+    The navigator's form of a member ID with letters, for a phone system that
+    needs it said; None for one without, which the keypad sends whole.
+    Letters are NATO words, as BlueCard's and Anthem's systems ask: bare
+    letters said to them came back as other letters ("D A X" heard as "b r x").
+    Copying this is reliable where deriving it is not: asked to say an ID whose
+    letters were split by digits, the model rebuilt it from what it had said and
+    keyed earlier and dropped the inner letter about one time in four. Only
+    ASCII letters and digits are kept; nothing else is a character a payer's
+    system takes.
+    """
+    kept = [ch for ch in identifier if ch.isascii() and ch.isalnum()]
+    if not any(ch.isalpha() for ch in kept):
+        return None
+    return " ".join(_nato_word(ch) if ch.isalpha() else ch for ch in kept)
+
+
+def _nato_word(letter: str) -> str:
+    """ "x" -> "X-ray": written as a voice reads it, capitalized as a name."""
+    return {"x": "X-ray"}.get(letter.lower()) or NATO_ALPHABET[letter.lower()].title()
+
+
 # Place key -> how it is said, in the fixed spoken order.
 _SPOKEN_PLACES = {
     "office": "office",

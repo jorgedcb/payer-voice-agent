@@ -112,6 +112,19 @@ def test_member_zip_reaches_the_navigator_only_when_sent():
         assert "ZIP" not in rendered
 
 
+def test_a_member_id_with_letters_reaches_the_navigator_spelled_out():
+    """A phone system that needs the letters gets the ID said, and the model
+    copies it from here instead of rebuilding it from what it keyed."""
+    rendered = prompts.instructions(
+        "navigator", prepare(payload(member_id="cqp730W18265"))
+    )
+    assert (
+        "Member ID spelled out: Charlie Quebec Papa 7 3 0 Whiskey 1 8 2 6 5" in rendered
+    )
+    numeric = prompts.instructions("navigator", prepare(payload(member_id="907264318")))
+    assert "spelled out:" not in numeric
+
+
 @pytest.mark.parametrize(
     "zip_code", ["7870", "787011", "78701-1234", "7870A", "７８７０１", "٧٨٧٠١"]
 )

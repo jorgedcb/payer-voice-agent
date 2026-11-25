@@ -156,6 +156,50 @@ navigator waits for the IVR's response rather than taking another action.
 [`test_menu.py`](../test/navigator/test_menu.py), and
 [`test_keypad.py`](../test/navigator/test_keypad.py).
 
+## Member IDs with letters
+
+**Decision:** the navigator keys member IDs, as it keys every number, and says
+the whole ID once a line that asked for the member ID itself shows it needs
+the letters: it asks for the ID including its letters, reads the ID back
+without them, or finds no member after the keyed digits. A line that asks for
+the numbers alone or the numeric portion keeps getting them keyed, and its
+read-back of those digits is confirmed. A question about part of the ID gets
+only that part. When the ID has letters, THIS CALL also carries it spelled
+out, letters as NATO words and digits one at a time, and the rule points
+there.
+
+**History:** in November 2026 several member-not-found calls lost an ID's
+letters. Cigna's assistant read back the keyed digits and asked for "any
+letter at the start"; the agent said yes. Anthem's assistants asked for the ID
+again after finding no member; the agent keyed the same digits, or said the ID
+without a letter inside it. A Blue plan asked for the ID "including any
+letters"; the agent keyed the digits. Replaying those turns with identifiers
+swapped, the turns failed 8 of 8 (one Cigna read-back), 5 of 8 (Anthem, inner
+letter) and 3 of 8 (Cigna, no match) before the change, and 0 of 36 Cigna
+read-backs and 0 of 40 other turns after, both with bare letters and again
+with NATO letters. Worded rules alone left the inner letter dropped about one
+time in four: the model rebuilt the ID from the prefix it had said and the
+digits it had keyed. Copying the spelled-out form fixed that.
+
+The spelled-out form first used bare letters and was switched to NATO words,
+as BlueCard's and Anthem's systems ask for them. On real calls bare letters
+came back as other letters ("D A X" heard as "b r x"), and an ID that failed
+as "X three L" went through as "X-ray three Lima". These are call
+observations, not a recognition benchmark.
+
+A letter in `speak`'s identifier example ("W 0 0 1 2") was tried too and
+dropped: the results above hold without it, and with it a Blue plan's "In a
+few words, how can I help you?" was taken for a person 4 of 8 times, against
+0 of 8 without it. For the same reason a dedicated tool that says the member
+ID was not added: a new tool changes which tool the model picks on unrelated
+turns, and copying the spelled-out line already measured 0 failures. Whether
+to say an ID with letters at the first prompt, rather than key it, was left
+open: some lines take the digits alone.
+
+**Code and coverage:** [`navigator.md`](../src/prompts/navigator.md),
+[`formatting.py`](../src/prompts/formatting.py) (`one_at_a_time`), and
+[`test_member_id_letters.py`](../test/navigator/test_member_id_letters.py).
+
 ## Closing is enforced by a task
 
 **Decision:** `end_call` runs `CallReferenceTask` before the SDK hang-up. The task

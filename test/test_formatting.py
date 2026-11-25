@@ -4,6 +4,7 @@ import pytest
 
 from prompts.formatting import (
     nato_spell,
+    one_at_a_time,
     speak_code,
     speak_cpt_codes,
     speak_date,
@@ -125,3 +126,20 @@ def test_places_are_read_in_the_fixed_order() -> None:
         speak_places(["on_campus_outpatient_hospital", "home", "office"])
         == "office, home, and on-campus outpatient hospital"
     )
+
+
+def test_a_member_id_with_letters_is_spelled_out_with_nato_letters() -> None:
+    assert (
+        one_at_a_time("cqp730W18265") == "Charlie Quebec Papa 7 3 0 Whiskey 1 8 2 6 5"
+    )
+    assert one_at_a_time("XSB-7304 1826") == "X-ray Sierra Bravo 7 3 0 4 1 8 2 6"
+
+
+def test_only_ascii_letters_and_digits_are_spelled_out() -> None:
+    # Full-width letters, other scripts' digits and "ß" (upper-cased to "SS")
+    # are nothing a payer's system takes.
+    assert one_at_a_time("U12\uff37\u0663\u00df3") == "Uniform 1 2 3"
+
+
+def test_a_member_id_without_letters_is_not_spelled_out() -> None:
+    assert one_at_a_time("907264318") is None

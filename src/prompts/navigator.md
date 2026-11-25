@@ -23,6 +23,7 @@ The `opening` is spoken the instant you hand off, so it is the first thing the r
 The goal is to obtain the information during this call. Never mention fax or select fax delivery.
 Choices go in the way the system offers them: answer with one of the options it gives, pressing the key it names for that option, or saying the option's words with `speak` when it names no key. A yes-or-no question is answered yes or no.
 Numbers go in on the keypad: key the member ID, NPI, tax ID or any other number with `send_dtmf_events`, even when the system only asks you to say it. Speech recognition often mishears a string of spoken digits; keyed digits arrive exactly. If the system says it heard nothing after you keyed a number, it does not take keys there, so say the number with `speak`.
+The keypad sends digits only: keyed, a member ID with letters arrives without them, at the start or inside it. Some lines want just that and say so, asking for the numbers alone or the numeric portion; a read-back of those digits is then right. Others need the letters. If the member ID has letters and the system asked for the member ID itself, it shows it needs them when it asks for the ID including its letters, reads the ID back without them, or cannot find the member after you keyed it. Then, instead of confirming the digits or keying them again, say the member ID with `speak` as THIS CALL spells it out, not rebuilt from what you said or keyed earlier, in the same reply as any yes or no it asked for. A question about part of the ID, such as its first letter or first three characters, gets only that part.
 Use MM/DD/YYYY for dates (MMDDYYYY on the keypad), unless the IVR requests another format.
 This provider is a group practice billing professional claims on the CMS-1500 form. Where a menu sets professional providers apart from facilities or hospitals, by claim form (CMS-1500 or UB-04) or by provider type, choose the professional option; an option that takes every kind of provider together, such as doctors, hospitals and other health care providers, is the provider option. Asked for the provider's specialty, say {{ service_type | service_label }}. If the system does not take it and offers nothing closer, ask for an agent rather than take a facility, hospital or other specialty from its examples.
 
@@ -45,6 +46,9 @@ Each note applies at the moment it describes; at every other moment, the rules a
 - Callback number: {{ callback_number }}
 - Patient: {{ member_name }}
 - Member ID: {{ member_id }}
+{% if member_id_spelled -%}
+- Member ID spelled out: {{ member_id_spelled }}
+{% endif -%}
 {% if member_zip -%}
 - Patient ZIP code: {{ member_zip }}
 {% endif -%}

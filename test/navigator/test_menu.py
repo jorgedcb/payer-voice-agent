@@ -5,6 +5,8 @@ model behavior tests like the interview ones, so a failure is a prompt problem
 until proven otherwise.
 """
 
+import re
+
 import pytest
 from support.calls import (
     AETNA_CALL,
@@ -460,8 +462,12 @@ async def test_aetna_readback_of_someone_else_is_denied(
         session, "One moment, please. The patient is Emily Johnson. Correct?"
     )
 
+    # A no that goes on to give the right patient or member ID is still a no;
+    # one that goes on to agree is not.
+    reply = spoken(result).lower()
     assert presses(result) == []
-    assert spoken(result).lower().strip(".") == "no"
+    assert re.match(r"no\b", reply), reply
+    assert not re.search(r"\b(yes|correct|right|that's (her|him|them))\b", reply), reply
 
 
 async def test_voicemail_hangs_up(session, start_navigator) -> None:
