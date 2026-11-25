@@ -1998,3 +1998,26 @@ async def replay(under_test, history) -> None:
             )
         )
     await under_test.update_chat_ctx(chat_ctx)
+
+
+def edit_call(history, edits=(), *, through: str):
+    """The call through the one turn that says `through`, with words changed in it.
+
+    Each (old, new) pair replaces `old` in the one kept turn that contains it.
+    A pair that would change nothing, or that matches no kept turn or more than
+    one, fails here, so an edit that stops matching cannot leave a test running
+    on the turn it meant to change.
+    """
+    [last] = [n for n, (_, text) in enumerate(history) if text == through]
+    kept = list(history[: last + 1])
+    for old, new in edits:
+        assert old != new, f"edit changes nothing: {old!r}"
+        hits = [
+            n
+            for n, (_, text) in enumerate(kept)
+            if isinstance(text, str) and old in text
+        ]
+        assert len(hits) == 1, f"{old!r} is in {len(hits)} kept turns, not one"
+        kind, text = kept[hits[0]]
+        kept[hits[0]] = (kind, text.replace(old, new))
+    return kept

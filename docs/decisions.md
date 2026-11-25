@@ -361,6 +361,65 @@ as proof every topic was asked takes that on trust.
 [`test_closing.py`](../test/interview/test_closing.py), and
 [`test_benefit_topics.py`](../test/interview/test_benefit_topics.py).
 
+## Answers that leave a topic open
+
+**Decision:** two per-topic "ask again" clauses are gone; four stay. The benefit
+year (topic 5) and the reimbursement basis (topic 16) no longer say to ask again
+when a reply names no kind of year or still gives no basis: "Reading the line"
+says it for every topic. These stay:
+
+- Topic 13, a copay the member is not paying because an accumulator is met is
+  still a copay. It defines the skip condition ("skip it where there is no
+  copay"), and Sol needs it.
+- Topic 14, a met deductible is still a deductible. Like topic 13, it defines a
+  skip condition, which "Reading the line" does not cover. No test here could
+  fail without it, so whether Sol needs it is unmeasured.
+- Topic 15, a reply with no visit number has not answered. The backend clears a
+  stored review visit when a call says a review is required without one, so a
+  reply taken as answered loses data. No test here could fail without it.
+- Topic 11, a volunteered limit answers neither question. Its test fails on
+  GPT-4.1 by closing early, with the clause or without it, so it says nothing
+  about the clause.
+
+A clause went only where a test that can fail without it showed that Sol does
+not need it.
+
+**History:** the six clauses came from the GPT-4.1 prompt. In November 2026
+each was measured on GPT-6 Sol at effort `none` with the clause and without it,
+in [`test_unsettled_answers.py`](../test/interview/test_unsettled_answers.py).
+Each test replays a recorded Aetna call to the topic and gives the answer the
+clause is about. GPT-4.1 ran as a control, to show whether a test can fail at
+all. The answers are written into the recorded calls, not taken from calls that
+gave them, so they are cleaner than speech recognition delivers.
+
+| Topic | Sol with | Sol without | GPT-4.1 with | GPT-4.1 without | Decision |
+|---|---|---|---|---|---|
+| 5. Benefit year naming no kind | 10/10 | 20/20 | 40/40 | 36/40 | removed |
+| 16. Reimbursement still without a basis | 10/10 | 20/20 | 10/10 | 4/10 | removed |
+| 13. Copay not paid while an accumulator is met | 10/10 | 0/10 | 0/10 | 0/10 | kept |
+| 14. Met deductible | 10/10 | 10/10 | 10/10 | 10/10 | kept, no test |
+| 15. Review with no visit number | 9/10 | 10/10 | 10/10 | 10/10 | kept, no test |
+| 11. Volunteered visit limit | 10/10 | 9/10 | 3/10 | 0/10 | kept |
+
+Sol's "without" for topics 5 and 16 includes 10 runs with all six clauses
+removed. On the benefit year, GPT-4.1's four failures, all without the clause,
+went on to funding; the difference is small, and Sol never failed it.
+
+With the topic-13 definition, Sol asked whether the out-of-network benefit has a
+copay even though the member is not paying one; without it, Sol asked about the
+deductible instead. GPT-4.1 skipped the copay with the definition or without it.
+The test's answer leaves out the copay amount. An earlier version stated it, and
+every model asked about the copay with or without the definition.
+
+The topic-14 test said the deductible was met and no longer applied, without its
+amount, and every model still asked. It was left out, since it cannot fail. The
+topic-15 test failed once, on the grader. The topic-11 test's failure on Sol was
+a question clarifying a garbled telehealth answer, which the test accepts.
+On the final prompt, Sol passed all four tests 10 of 10.
+
+**Code and coverage:** [`verification.md`](../src/prompts/verification.md)
+and [`test_unsettled_answers.py`](../test/interview/test_unsettled_answers.py).
+
 ## Traces are grouped by call ID
 
 **Decision:** stamp `langfuse.session.id` with a span processor in addition to

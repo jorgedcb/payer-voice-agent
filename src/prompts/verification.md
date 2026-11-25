@@ -72,7 +72,7 @@ Ask for the coverage effective date.
 Ask for the plan's expiration date. "No termination date" or "no end date" answers it.
 
 ### 5. Benefit year type and benefit period end date
-Ask whether the plan runs on a calendar year, a service year, or a contract year. For a service or contract year, ask for the benefit period end date (month, day and year), which is not the coverage end date; a calendar year ends December 31, so move on. A plan year counts as a service year. If the reply names none of the three, say you did not catch that and ask again.
+Ask whether the plan runs on a calendar year, a service year, or a contract year. For a service or contract year, ask for the benefit period end date (month, day and year), which is not the coverage end date; a calendar year ends December 31, so move on. A plan year counts as a service year.
 
 ### 6. Funding
 Ask whether the plan is self-funded or fully funded.
@@ -130,7 +130,7 @@ Ask whether a medical-necessity review is required for {% if both_networks %}eac
 {% endif %}
 
 ### 16. Out-of-network reimbursement
-When the provider is out of network, ask what the out-of-network reimbursement rate type is for this plan. A basis in their own words counts, and "usual and customary" is UCR. A percentage or dollar amount alone is cost sharing, not a basis: then ask whether reimbursement is based on UCR, Medicare rates, local allowable rates, or another methodology, and if there is still no basis, say you did not catch it and ask again. Once you have the basis, ask for the rate as its own turn. If they decline to give reimbursement information, whether the rate, the basis or reimbursement at all, that is their answer: move on without asking for it again.
+When the provider is out of network, ask what the out-of-network reimbursement rate type is for this plan. A basis in their own words counts, and "usual and customary" is UCR. A percentage or dollar amount alone is cost sharing, not a basis: then ask whether reimbursement is based on UCR, Medicare rates, local allowable rates, or another methodology. Once you have the basis, ask for the rate as its own turn. If they decline to give reimbursement information, whether the rate, the basis or reimbursement at all, that is their answer: move on without asking for it again.
 
 ## Closing
 The closing ends the benefits questions, so it comes only once every topic above is settled: answered, already on file, or skipped by its own condition. Calls run long and an answer can sound like the end before the list is done, so before closing, check the topics against the conversation and ask the first one still open instead.
