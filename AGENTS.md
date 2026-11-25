@@ -16,3 +16,20 @@ IDs, addresses, phone numbers or call references. Describe a call by payer and d
 by hand"), and use synthetic values, as [CONTRIBUTING.md](CONTRIBUTING.md) requires.
 
 Setup, checks and testing are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Question what you are given
+
+Requirements, tests, earlier decisions and their measurements are claims, not facts.
+Before acting on one, ask what it rests on and check it against real calls, reasoning
+from what a call needs rather than from what a test or a document says.
+
+- Question the requirement first: whether it is needed, and whether it is stated
+  correctly.
+- A test is evidence about the agent only where its input matches what real calls send:
+  what the line says, and how speech recognition splits it into turns. Check that before
+  changing a prompt or choosing a model because of a result. A navigator test once split
+  a transfer announcement into turns no real call produced, and read at face value it
+  would have ruled out a model.
+- A decision holds for the models, prompts and calls it was measured on. When those
+  change, measure it again instead of carrying it forward, or reversing it, on its
+  record alone.

@@ -5,13 +5,14 @@ suite can't drift apart. Override them for a comparison run without editing any
 file:
 
     LK_TEST_MODEL=google/gemma-4-31b-it uv run pytest
-    LK_NAVIGATOR_TEST_MODEL=openai/gpt-6-sol uv run pytest test/navigator/
+    LK_NAVIGATOR_TEST_MODEL=openai/gpt-6-luna uv run pytest test/navigator/
     LK_TEST_MODEL=openai/gpt-6-luna LK_TEST_REASONING=low uv run pytest test/interview/
 
 LK_TEST_REASONING sets the interview model's reasoning effort. With neither
 set, the interview's LLM is built exactly as production builds it
 (agent.primary_llm); with only LK_TEST_MODEL, that model runs at its provider's
-default effort.
+default effort. The navigator's works the same way without the effort knob:
+unset, it is navigator.navigator_primary_llm; named, the provider's default.
 
 The judge is neither: it is pinned (JUDGE_MODEL), so a comparison run changes
 the model under test and not the grader.
@@ -33,7 +34,7 @@ from prompts import call_date_today
 # navigator on its own. Each suite runs against what production runs.
 TEST_MODEL = getenv("LK_TEST_MODEL")
 TEST_REASONING = getenv("LK_TEST_REASONING")
-NAVIGATOR_TEST_MODEL = getenv("LK_NAVIGATOR_TEST_MODEL", navigator.NAVIGATOR_LLM)
+NAVIGATOR_TEST_MODEL = getenv("LK_NAVIGATOR_TEST_MODEL")
 # Grades judge() intents. Reasoning stays at the provider's default: grading has
 # no latency budget, and the reply is judged against the intent, not answered.
 JUDGE_MODEL = "openai/gpt-6-sol"
@@ -131,9 +132,13 @@ async def navigator_llm(request):
     would hide which model the prompt was actually measured against."""
     if request.config.getoption("--offline"):
         pytest.skip("requires LiveKit inference")
-    async with inference.LLM(
-        model=NAVIGATOR_TEST_MODEL, extra_kwargs={"parallel_tool_calls": False}
-    ) as model:
+    if NAVIGATOR_TEST_MODEL is None:
+        model = navigator.navigator_primary_llm()
+    else:
+        model = navigator.navigator_primary_llm(
+            model=NAVIGATOR_TEST_MODEL, reasoning=NOT_GIVEN
+        )
+    async with model:
         yield model
 
 

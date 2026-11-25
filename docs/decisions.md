@@ -39,8 +39,9 @@ selection by participant kind rather than assuming the same model fits both.
 ## Model selection
 
 **Decision:** the interview uses GPT-6 Sol with reasoning effort `none`, with Gemma
-as its provider-error fallback; the navigator uses GPT-5.6 Luna with Gemini 3.8
-Flash as its fallback. Fallback does not evaluate response quality.
+as its provider-error fallback; the navigator uses GPT-6 Sol with reasoning effort
+`none` too, with Gemini 3.8 Flash as its fallback. Fallback does not evaluate response
+quality.
 
 **History:** on a seeded stage-direction failure context, Gemma spoke stage
 directions in 6 of 10 runs and GPT-4.1 in 0 of 10. This motivated the interview
@@ -63,9 +64,37 @@ Sol `none` passed the full live suite in three runs except one failure each in
 two of them, and spoke no stage directions in 10 of 10 runs on the seeded
 context.
 
-The navigator tolerates more model latency while traversing menus; its fallback
-was recorded as passing 9/9 navigator tests on each of three runs, about two
-seconds slower per turn. A different provider also reduces shared outage risk.
+The navigator's fallback was recorded as passing 9/9 navigator tests on each of
+three runs, about two seconds slower per turn; a different provider also reduces
+shared outage risk. In November 2026 it passed the 96 navigator and call-flow
+tests in one run, and wrote a person's first words in 2.9 to 4.4 s (median; p90
+up to 7.8 s), against about 1 s for Sol, so a pickup during an OpenAI outage is
+slow.
+
+The navigator moved from GPT-5.6 Luna to GPT-6 Sol in November 2026. On the
+navigator's prompt and tools, a menu turn's complete tool call took (median of
+20, p90): GPT-5.6 Luna 1,125 ms (1,376), GPT-6 Sol at the provider's default
+effort 959 ms (1,174), GPT-6 Luna 875 ms (1,263), all keying the right option
+every time. The turn a person picks up on, from their greeting to the completed
+handoff with its opening (median of 20, two greetings): GPT-5.6 Luna 1,148 and
+1,243 ms, Sol at the default 924 and 974 ms, Sol `none` 1,016 and 953 ms.
+
+The test results are for Sol at the provider's default effort. Sol passed the
+navigator tests in three of three runs, and GPT-6 Luna as well; on the final
+version, the 96 navigator and call-flow tests passed in two of three runs (one
+BlueCard handoff failed once), the Aetna tests 10 of 10, and both quarantined
+navigator tests 10 of 10. The difference was the Aetna assistant's full route,
+replayed from a 2026-11-20 call: Sol passed it 10 of 10, GPT-6 Luna 8 of 10 and
+GPT-5.6 Luna 3 of 10. The failures all spoke the date of birth as "05/14/2018",
+the form the prompt showed it in, so the prompt now shows it in words as well.
+An earlier version of that test split the transfer announcement into separate
+turns, which no production call produced: all 18 Aetna transfers from
+2026-11-20 to 2026-11-25 arrived as one turn, heard after the agent had moved
+to the queue's shorter end-of-turn wait. On that version both GPT-6 models
+handed off on its lone "Okay?".
+
+The navigator then went to effort `none`, to match the interview, without
+re-running those tests on it; at `none` only the pickup turn above is measured.
 
 **Code and coverage:** [`agent.py`](../src/agent.py),
 [`navigator.py`](../src/navigator.py),

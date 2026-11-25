@@ -15,13 +15,15 @@ The lines are from that call; identifiers are synthetic.
 import re
 
 import pytest
-from support.calls import called, replay, show_response, spoken_digits
+from support.calls import called, replay, show_response
 from support.navigator import (
     asks_for_a_person,
+    asks_for_a_person_or_says_why,
     assert_moved_to_the_queue,
     assert_waited,
+    confirms,
+    gives,
     hears,
-    keyed,
     presses,
     spoken,
     states_the_reason,
@@ -184,7 +186,7 @@ async def test_the_plans_how_can_i_help_is_not_a_person(
     result = await hears(session, question, forbid=WITH_THE_PLANS_SYSTEM)
     show_response(question, result)
 
-    assert states_the_reason(result) or asks_for_a_person(result), (
+    assert asks_for_a_person_or_says_why(result), (
         f"did not answer the plan's system: {spoken(result)!r} {presses(result)}"
     )
 
@@ -204,8 +206,7 @@ async def test_the_plans_say_or_enter_is_not_a_person(
     result = await hears(session, greeting, forbid=WITH_THE_PLANS_SYSTEM)
     show_response(greeting, result)
 
-    given = keyed(result) or spoken_digits(spoken(result))
-    assert given.startswith(NPI), f"NPI not given: {given!r}"
+    assert gives(result).startswith(NPI), f"NPI not given: {gives(result)!r}"
 
 
 async def test_bluecard_route_reaches_a_person_at_the_plan(
@@ -245,12 +246,11 @@ async def test_bluecard_route_reaches_a_person_at_the_plan(
     result = await line_says(PLAN_GREETING)
     assert "professional" in spoken(result).lower()
     result = await line_says(PLAN_HOW_CAN_I_HELP)
-    assert states_the_reason(result) or asks_for_a_person(result)
+    assert asks_for_a_person_or_says_why(result)
     result = await line_says(PLAN_READBACK)
-    assert spoken(result).lower().startswith(("yes", "correct"))
+    assert confirms(result)
     result = await line_says(PLAN_NPI_QUESTION)
-    given = keyed(result) or spoken_digits(spoken(result))
-    assert given.startswith(NPI), f"NPI not given: {given!r}"
+    assert gives(result).startswith(NPI), f"NPI not given: {gives(result)!r}"
 
     result = await line_says(PLAN_HOLD, forbid=WITH_THE_PLANS_SYSTEM)
     assert_moved_to_the_queue(result)

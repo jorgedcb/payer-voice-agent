@@ -14,18 +14,24 @@ through its offers to help, or take its own offer to connect one. It then says
 it is connecting you, plays a survey notice and "please hold while I transfer
 your call", and a person introduces themselves by name.
 
-The assistant's lines are from those calls; identifiers are synthetic.
+The assistant's lines are from those calls, and the full route from a
+2026-11-20 call that reached a person; identifiers are synthetic.
 """
 
 import pytest
 from support.calls import AETNA_PATIENT, called, replay, show_response, spoken_digits
 from support.navigator import (
     asks_for_a_person,
+    asks_for_a_person_or_says_why,
+    confirms,
+    gives,
     hears,
     keyed,
     presses,
     spoken,
     states_the_reason,
+    stays_silent,
+    waited,
 )
 
 from navigator import HoldAgent
@@ -54,42 +60,19 @@ MEMBER_ID_QUESTION = (
     "it, I can use their badge ID or the subscriber's Social Security number."
 )
 DOB_QUESTION = "Alright. I found the member, so now I just need the date of birth."
-MEMBER_READBACK = "Are you calling on behalf of Rashid Amari?"
+MEMBER_READBACK = f"Are you calling on behalf of {AETNA_PATIENT['member_name']}?"
 SERVICE_QUESTION = (
     "Okay. I have the member now. By continuing, you agree that information from "
     "Aetna is not an offer or guarantee of coverage or payment and is subject to "
     "plan terms and member eligibility at the time of service. What service code "
     "do you want me to check?"
 )
+# The assistant's reply on those calls when the agent asked for a person without
+# saying why.
 REASON_QUESTION = (
     "I'd be happy to help. To determine the best next step, please tell me the "
     "reason for your call."
 )
-WHAT_ABOUT_BENEFITS = "What exactly about the benefits do you need help with?"
-SELF_SERVICE_PUSHBACK = (
-    "I can take care of the question here right now. So what service code do you "
-    "want me to check?"
-)
-CONNECTING = "I'm connecting you to a representative now."
-# The assistant keeps talking after it says it is connecting you. Once the call
-# is waiting for a person, the shorter end-of-turn wait hears it in pieces, and
-# none of them is the person.
-TRANSFER = [
-    (
-        "Just a moment. If your question is about registering for or using the "
-        "provider portal, please contact the portal's support line. As our "
-        "customer, your opinion is important to us. You may have an opportunity "
-        "to give us feedback on today's call. Please stay on the line after the "
-        "call to answer a short survey."
-    ),
-    "Okay?",
-    "Please hold while I transfer your call.",
-]
-ADVOCATE = (
-    "Hi. Good day. Thank you for calling Aetna. My name is Dana, and I'm your "
-    "customer advocate for today. How may I help you?"
-)
-
 NPI = AETNA_PATIENT["npi"]
 MEMBER_DIGITS = spoken_digits(AETNA_PATIENT["member_id"])
 
@@ -143,9 +126,92 @@ async def test_verified_how_can_i_help_is_not_a_person(
     result = await hears(session, VERIFIED, forbid=WITH_THE_ASSISTANT)
     show_response(VERIFIED, result)
 
-    assert asks_for_a_person(result) or states_the_reason(result), (
+    assert asks_for_a_person_or_says_why(result), (
         f"did not answer the assistant: {spoken(result)!r} {presses(result)}"
     )
+
+
+async def test_service_code_question_gets_a_request_for_a_person(
+    session, start_navigator
+) -> None:
+    """The assistant's offer to look benefits up itself, as it came on those calls.
+
+    Giving it a code goes along with the lookup, which is how the twelfth call
+    ended without a person.
+    """
+    navigator = await start_navigator(**SPEECH_CALL, ivr_instructions=MEMBER_ID_NOTE)
+    await replay(navigator, TO_IDENTIFIED)
+
+    result = await hears(session, SERVICE_QUESTION, forbid=WITH_THE_ASSISTANT)
+    show_response(SERVICE_QUESTION, result)
+
+    assert asks_for_a_person_not_a_lookup(result), (
+        f"did not ask for a person: {spoken(result)!r} {presses(result)}"
+    )
+
+
+def gives_the_npi(result) -> bool:
+    return gives(result).startswith(NPI)
+
+
+def gives_the_member_id(result) -> bool:
+    # Without the note, the W may be dropped, keyed as a digit, or said.
+    return gives(result).endswith(MEMBER_DIGITS)
+
+
+def asks_for_a_person_not_a_lookup(result) -> bool:
+    """A request for a person, with no code for the assistant to look up."""
+    return asks_for_a_person(result) and not gives(result)
+
+
+# A 2026-11-20 Aetna physical therapy call that reached a person, line by line
+# as the agent heard it: speech recognition's dropped words are kept, the
+# identifiers are synthetic. Each line comes with what the agent may do next.
+TO_HOW_CAN_I_HELP = [
+    (GREETING, gives_the_npi),
+    ("Alright. Just a moment while I pull that up.", waited),
+]
+HOW_CAN_I_HELP = "Thanks for that. You're verified. can I help you today?"
+# On that call the agent said why it was calling, and the assistant went on to
+# the member.
+TO_THE_TRANSFER = [
+    (
+        "I can help you with eligibility and benefits for physical therapy, and "
+        "that's usually quicker than waiting for a representative. ahead and give "
+        "me the member's Aetna ID so I can get started.",
+        gives_the_member_id,
+    ),
+    ("Okay. I found the number. the date of birth?", gives_the_date_of_birth),
+    (MEMBER_READBACK, confirms),
+    ("Okay. Let me just check something real quick.", waited),
+    (
+        "What exactly about the benefits do you need help with?",
+        asks_for_a_person_or_says_why,
+    ),
+    (
+        "I can take care of the physical therapy benefits check here right now. So "
+        "give me the service code first, and I'll pull the coverage.",
+        asks_for_a_person_not_a_lookup,
+    ),
+]
+# Then it transfers, and nothing in what follows is the person yet. The agent may
+# move to the queue on "connecting you". Recognition hears the notice after it as
+# one turn: all 18 Aetna transfers from 2026-11-20 to 2026-11-25 did, each
+# heard after the agent had moved to the queue's shorter end-of-turn wait.
+TRANSFER = [
+    "I'm connecting you to a representative now.",
+    (
+        "If your question is about registering for or using the provider portal, "
+        "please contact the portal's support line. As our customer, your opinion "
+        "is important to us. You may have an opportunity to give us feedback on "
+        "today's call. Please stay on the line after the call to answer a short "
+        "survey. Okay? Please hold while I transfer your call."
+    ),
+]
+ADVOCATE = (
+    "Thank you for calling Aetna provider services. This is Dana, your customer "
+    "advocate for today. May I have your name and first initial of your last name,"
+)
 
 
 @pytest.mark.parametrize(
@@ -156,70 +222,36 @@ async def test_verified_how_can_i_help_is_not_a_person(
 async def test_aetna_assistant_route_reaches_a_person(
     session, start_navigator, ivr_instructions
 ) -> None:
-    """The whole route a teammate took by hand, with the agent's own decisions kept.
+    """The whole call, in order, from the NPI to the representative.
 
-    Each step allows what would get the call through at that point, not one script:
-    a number keyed or spoken, a reason or a request for a person when the
-    assistant asks how it can help. The note is the only thing that changes how
-    the member ID goes in, so this is the one test run with and without it.
+    Where the agent's answer changes what the assistant says next, the route
+    follows it. The note is the only thing that changes how the member ID goes in, so this
+    is the one test run with and without it.
     """
-    await start_navigator(**SPEECH_CALL, ivr_instructions=ivr_instructions)
+    await start_navigator(
+        **AETNA_PATIENT,
+        service_type="physical_therapy",
+        ivr_instructions=ivr_instructions,
+    )
 
-    async def assistant_says(heard: str, forbid=WITH_THE_ASSISTANT):
-        result = await hears(session, heard, forbid=forbid)
-        show_response(heard, result)
+    async def answers(line, allowed, forbid=WITH_THE_ASSISTANT):
+        result = await hears(session, line, forbid=forbid)
+        show_response(line, result)
+        assert allowed(result), (
+            f"{allowed.__name__} failed on {line!r}: "
+            f"said {spoken(result)!r}, pressed {presses(result)}"
+        )
         return result
 
-    result = await assistant_says(GREETING)
-    assert NPI in (keyed(result), spoken_digits(spoken(result))), "NPI not given"
-
-    result = await assistant_says("Alright. Let me pull that up.")
-    assert presses(result) == [] and spoken(result) == "", "answered a lookup"
-
-    result = await assistant_says(VERIFIED)
-    assert asks_for_a_person(result) or states_the_reason(result)
-
-    # Asked for a person here, the assistant asks the reason first; either way
-    # it then wants the member before it does anything else.
-    if asks_for_a_person(result):
-        result = await assistant_says(REASON_QUESTION)
-        assert states_the_reason(result) or asks_for_a_person(result)
-
-    result = await assistant_says(MEMBER_ID_QUESTION)
-    # Without the note, the W may be dropped, keyed as a digit, or said.
-    given = keyed(result) or spoken_digits(spoken(result))
-    assert given.endswith(MEMBER_DIGITS), f"member ID not given: {given!r}"
-
-    result = await assistant_says(DOB_QUESTION)
-    assert gives_the_date_of_birth(result), (
-        f"date of birth not given: {presses(result)} {spoken(result)!r}"
-    )
-
-    result = await assistant_says(MEMBER_READBACK)
-    assert spoken(result).lower().startswith(("yes", "correct")), (
-        f"did not confirm the member: {spoken(result)!r}"
-    )
-
-    # Identified. From here the assistant offers to answer itself, which gets a
-    # request for a representative. Asked for one, it routes: the reason for the
-    # call, then what about the benefits. Teammates answered those with a request
-    # for a person or with their need, and were connected either way.
-    routing = (REASON_QUESTION, WHAT_ABOUT_BENEFITS)
-    for question in (
-        SERVICE_QUESTION,
-        *routing,
-        SELF_SERVICE_PUSHBACK,
-    ):
-        result = await assistant_says(question)
-        assert asks_for_a_person(result) or (
-            question in routing and states_the_reason(result)
-        ), f"went along with the assistant: {spoken(result)!r} {presses(result)}"
-
-    for announcement in (CONNECTING, *TRANSFER):
-        result = await assistant_says(announcement, forbid=BEING_TRANSFERRED)
-        assert spoken(result) == "" and presses(result) == [], (
-            f"answered the assistant's transfer notice: {spoken(result)!r}"
-        )
+    for line, allowed in TO_HOW_CAN_I_HELP:
+        await answers(line, allowed)
+    result = await answers(HOW_CAN_I_HELP, asks_for_a_person_or_says_why)
+    if not states_the_reason(result):
+        await answers(REASON_QUESTION, states_the_reason)
+    for line, allowed in TO_THE_TRANSFER:
+        await answers(line, allowed)
+    for line in TRANSFER:
+        await answers(line, stays_silent, forbid=BEING_TRANSFERRED)
     assert isinstance(session.current_agent, HoldAgent), "not waiting for a person"
 
     result = await session.run(user_input=ADVOCATE)

@@ -23,11 +23,12 @@ the agent gives the line time to respond instead of generating another action.
 
 import logging
 from datetime import date
-from typing import Literal
+from typing import Final, Literal
 
 from livekit.agents import (
     Agent,
     ModelSettings,
+    NotGiven,
     RunContext,
     TurnHandlingOptions,
     function_tool,
@@ -37,6 +38,7 @@ from livekit.agents import (
 from livekit.agents.beta.tools import EndCallTool
 from livekit.agents.beta.tools import send_dtmf_events as sdk_send_dtmf_events
 from livekit.agents.beta.workflows.utils import DtmfEvent
+from livekit.agents.inference.llm import ReasoningSetting
 
 from dispatch import CallSpec
 from interview import InterviewAgent
@@ -46,13 +48,13 @@ logger = logging.getLogger(__name__)
 
 PROMPT = "navigator"
 
-# The navigator's own model, overriding the session's. The two phases have
-# opposite constraints: the interview answers a waiting human inside a tight
-# budget on a model run with reasoning off, while a menu tolerates a couple of
-# seconds, so the navigator gets a reasoning model. The tests run against this
-# constant.
-NAVIGATOR_LLM = "openai/gpt-5.6-luna"
-# Takes over only when luna's endpoint errors, never on output quality. Chosen
+# The navigator's own model, overriding the session's. The tests run against
+# these constants.
+NAVIGATOR_LLM = "openai/gpt-6-sol"
+# Off, as in the interview: the navigator also writes the first words a person
+# hears when they pick up.
+NAVIGATOR_LLM_REASONING: Final = "none"
+# Takes over only when the primary's endpoint errors, never on output quality. Chosen
 # from a different vendor so one provider outage cannot take both. Historical
 # results are in docs/decisions.md#model-selection.
 NAVIGATOR_FALLBACK_LLM = "google/gemini-3.8-flash"
@@ -75,11 +77,25 @@ HOLD_TURN_HANDLING = TurnHandlingOptions(
 )
 
 
+def navigator_primary_llm(
+    model: str = NAVIGATOR_LLM,
+    reasoning: ReasoningSetting | NotGiven = NAVIGATOR_LLM_REASONING,
+) -> inference.LLM:
+    """The navigator's primary LLM as production builds it. The tests build theirs
+    here too, overriding only what a comparison run names."""
+    return inference.LLM(
+        model=model, reasoning=reasoning, extra_kwargs={"parallel_tool_calls": False}
+    )
+
+
 def navigator_llm() -> llm.LLM:
     return llm.FallbackAdapter(
         [
-            inference.LLM(model=model, extra_kwargs={"parallel_tool_calls": False})
-            for model in (NAVIGATOR_LLM, NAVIGATOR_FALLBACK_LLM)
+            navigator_primary_llm(),
+            inference.LLM(
+                model=NAVIGATOR_FALLBACK_LLM,
+                extra_kwargs={"parallel_tool_calls": False},
+            ),
         ]
     )
 
@@ -120,7 +136,7 @@ class _PhoneSystemAgent(Agent):
         # rather than the fallback pair.
         #
         # The prompt carries the values as the dispatcher sends them, except the
-        # date of birth, shown in the MM/DD/YYYY order the prompt asks for, and
+        # date of birth, shown in the MM/DD/YYYY order a keypad takes and in words, and
         # a member ID with letters, also shown spelled out for the lines that
         # need it said. How a menu takes a value is a fact about the payer, not
         # the value: one line wants the member ID without its letter, another

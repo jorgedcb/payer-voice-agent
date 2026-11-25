@@ -79,10 +79,25 @@ def assert_moved_to_the_queue(result) -> None:
 
 def assert_waited(result) -> None:
     """Waiting is the `wait` tool and nothing else: no words, no keys, no handoff."""
-    assert spoken(result) == "", f"spoke instead of waiting: {spoken(result)!r}"
-    assert presses(result) == [], f"pressed instead of waiting: {presses(result)}"
+    assert stays_silent(result), (
+        f"answered instead of waiting: {spoken(result)!r} {presses(result)}"
+    )
     assert not any(ev.type == "agent_handoff" for ev in result.events)
     result.expect.contains_function_call(name="wait")
+
+
+def waited(result) -> bool:
+    """`assert_waited` as a check, for tests that pair each line with one."""
+    try:
+        assert_waited(result)
+    except AssertionError:
+        return False
+    return True
+
+
+def stays_silent(result) -> bool:
+    """No words and no keys. Unlike `waited`, moving to the queue is allowed."""
+    return spoken(result) == "" and presses(result) == []
 
 
 # Whole words: "in-person" or "personal" is not a request for one.
@@ -103,3 +118,18 @@ def states_the_reason(result) -> bool:
 def keyed(result) -> str:
     """The digits keyed this turn, without a closing pound or star."""
     return spoken_digits("".join("".join(keys) for keys in presses(result)))
+
+
+def gives(result) -> str:
+    """The number given this turn, keyed or said, as digits."""
+    return keyed(result) or spoken_digits(spoken(result))
+
+
+def confirms(result) -> bool:
+    """The agent answered a read-back with a yes."""
+    return spoken(result).lower().startswith(("yes", "correct"))
+
+
+def asks_for_a_person_or_says_why(result) -> bool:
+    """Either answer gets an assistant's "how can I help" toward a person."""
+    return asks_for_a_person(result) or states_the_reason(result)
