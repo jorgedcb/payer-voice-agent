@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from os import getenv
+from typing import Final
 
 from dotenv import load_dotenv
 from google.protobuf import duration_pb2
@@ -10,6 +11,7 @@ from livekit.agents import (
     AgentServer,
     AgentSession,
     JobContext,
+    NotGiven,
     STTContextOptions,
     TurnHandlingOptions,
     inference,
@@ -18,6 +20,7 @@ from livekit.agents import (
     stt,
     tts,
 )
+from livekit.agents.inference.llm import ReasoningSetting
 from livekit.plugins import noise_cancellation, silero
 
 import call_reference
@@ -37,8 +40,21 @@ logger = logging.getLogger(__name__)
 
 # The model order is a decision, so it lives in one place. Tests import these
 # rather than restating them, so they always run against what production runs.
-PRIMARY_LLM = "openai/gpt-4.1"
+PRIMARY_LLM = "openai/gpt-6-sol"
+# Unset, gpt-6-sol reasons before it speaks and the first token takes over a
+# second; with none it starts about as fast as the model it replaced.
+PRIMARY_LLM_REASONING: Final = "none"
 FALLBACK_LLM = "google/gemma-4-31b-it"
+
+
+def primary_llm(
+    model: str = PRIMARY_LLM,
+    reasoning: ReasoningSetting | NotGiven = PRIMARY_LLM_REASONING,
+) -> inference.LLM:
+    """The interview's primary LLM as production builds it. The tests build theirs
+    here too, overriding only what a comparison run names."""
+    return inference.LLM(model=model, reasoning=reasoning)
+
 
 # Identity of the payer's SIP leg in the room. Fixed so the dial and the session
 # name the same participant.
@@ -110,15 +126,14 @@ async def entrypoint(ctx: JobContext):
 
     # Configure the voice pipeline with STT, LLM, TTS, and VAD providers
     session: AgentSession = AgentSession(
-        # LLM with fallback: GPT-4.1 primary, Gemma backup.
+        # LLM with fallback: GPT-6 Sol primary, Gemma backup.
         # Fallback fires on provider errors only -- timeouts, 4xx/5xx, mid-stream
         # drops -- never on output quality, so the primary handles every call that
         # doesn't error.
-        # GPT-4.1 is primary to reduce spoken stage directions; historical results
-        # are in docs/decisions.md#model-selection.
+        # Why this primary, and the results behind it: docs/decisions.md#model-selection.
         llm=llm.FallbackAdapter(
             [
-                inference.LLM(model=PRIMARY_LLM),
+                primary_llm(),
                 inference.LLM(model=FALLBACK_LLM),
             ]
         ),

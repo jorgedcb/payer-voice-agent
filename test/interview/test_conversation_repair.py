@@ -73,7 +73,7 @@ HISTORY = [
 async def test_apology_after_interruption_does_not_reverse_caller_role(
     session,
     start_assistant,
-    llm,
+    judge_llm,
 ):
     agent = await start_assistant(
         caller_first_name="Annie",
@@ -99,7 +99,7 @@ async def test_apology_after_interruption_does_not_reverse_caller_role(
     # Silence is also safe; any speech must keep the caller/representative roles.
     await judge_replies_or_silence(
         result,
-        llm,
+        judge_llm,
         intent=(
             "The ONLY requirement is that the caller does not offer to help "
             "or assist the payer representative as if the caller were customer "
@@ -123,7 +123,7 @@ async def test_apology_after_interruption_does_not_reverse_caller_role(
 async def test_harmless_transcription_variation_does_not_derail_the_question(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     question,
 ):
     agent = await start_assistant(
@@ -149,7 +149,7 @@ async def test_harmless_transcription_variation_does_not_derail_the_question(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Answers the representative's request with CPT code 97110, with digits "
                 "spoken as words allowed; the code alone is a complete answer. May also "
@@ -165,14 +165,10 @@ async def test_harmless_transcription_variation_does_not_derail_the_question(
     result.expect.no_more_events()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Known separate gap: the interview advances after an omitted copay amount",
-)
 async def test_missing_benefit_amount_requires_clarification(
     session,
     start_assistant,
-    llm,
+    judge_llm,
 ):
     agent = await start_assistant(service_type="physical_therapy")
     await replay(
@@ -190,7 +186,7 @@ async def test_missing_benefit_amount_requires_clarification(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Asks the representative to clarify or repeat the missing copay amount. "
                 "Does not invent an amount, assume there is no copay, or move to a "
@@ -204,7 +200,7 @@ async def test_missing_benefit_amount_requires_clarification(
 async def test_explicit_name_confirmation_still_corrects_the_name(
     session,
     start_assistant,
-    llm,
+    judge_llm,
 ):
     agent = await start_assistant(
         caller_first_name="Annie",
@@ -223,7 +219,7 @@ async def test_explicit_name_confirmation_still_corrects_the_name(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Clarifies that the caller's name is Annie, not Anita, in response "
                 "to an explicit request for name confirmation. Must not confirm "
@@ -247,7 +243,7 @@ async def test_explicit_name_confirmation_still_corrects_the_name(
 async def test_casual_thanks_does_not_trigger_unsolicited_name_correction(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     heard_name,
 ):
     agent = await start_assistant(
@@ -267,7 +263,7 @@ async def test_casual_thanks_does_not_trigger_unsolicited_name_correction(
     # possible STT substitution adds a detour; silence or an acknowledgment is OK.
     await judge_replies_or_silence(
         result,
-        llm,
+        judge_llm,
         intent=(
             "The caller is Annie, last initial S; the representative is Jessie. "
             "Does not correct, reconfirm, repeat, or spell the caller Annie's "

@@ -23,7 +23,9 @@ UHC_PICKUP = [
 ]
 
 
-async def test_small_talk_gets_a_plain_reply(session, start_assistant, llm) -> None:
+async def test_small_talk_gets_a_plain_reply(
+    session, start_assistant, judge_llm
+) -> None:
     # A UHC call on 2026-09-22. "I'm doing well, thank you. I appreciate
     # your help." was followed by "Are you a virtual assistant AI? or a live human."
     agent = await start_assistant(caller_first_name="Annie", caller_last_initial="S")
@@ -37,7 +39,7 @@ async def test_small_talk_gets_a_plain_reply(session, start_assistant, llm) -> N
     text = spoken.event().item.text_content.lower()
     assert "appreciate" not in text, text
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Answers 'How are you doing today?' the way a person on a work call does: "
             "a few casual words such as 'Good, thanks, how about you?' or 'Doing good, "
@@ -82,7 +84,7 @@ PT_VERIFIED = [
     ],
 )
 async def test_no_diagnosis_code_is_said_the_way_a_caller_says_it(
-    session, start_assistant, llm, question
+    session, start_assistant, judge_llm, question
 ) -> None:
     # From a physical therapy call reviewed by a teammate who makes these calls
     # by hand: "The verification concerns general benefits. I do not have a
@@ -110,7 +112,7 @@ async def test_no_diagnosis_code_is_said_the_way_a_caller_says_it(
     for paperwork_word in ("verification", "concerns"):
         assert paperwork_word not in text, text
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Says plainly that there is no diagnosis code for this one and it is "
             "just general physical therapy under the CPT codes already given, in "
@@ -125,7 +127,7 @@ async def test_no_diagnosis_code_is_said_the_way_a_caller_says_it(
 
 
 async def test_provider_name_is_given_as_a_person_gives_it(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ) -> None:
     # A UHC call on 2026-09-21: "It is <the clinic's name>."
     # then "The NPI number is, ..." and the rep asked "Are you a virtual assistant
@@ -154,7 +156,7 @@ async def test_provider_name_is_given_as_a_person_gives_it(
     text = spoken.event().item.text_content.strip()
     assert not text.lower().startswith("it is "), text
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Gives the provider name, Northgate Sports Physical Therapy, and "
             "nothing the representative did not ask for. Any natural spoken phrasing "
@@ -187,7 +189,7 @@ BENEFITS_THROUGH_COB = PT_VERIFIED + [
 
 
 async def test_questions_are_asked_in_a_callers_words(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ) -> None:
     # "Does the plan cover services rendered outside the member's home state?"
     # is the prompt's topic text, and it was read to representatives word for
@@ -212,7 +214,7 @@ async def test_questions_are_asked_in_a_callers_words(
     text = spoken.event().item.text_content.lower()
     assert "rendered" not in text, text
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Asks whether the plan covers the member out of state, in plain spoken "
             "words a clinic staffer would use, such as 'And does the plan cover them "

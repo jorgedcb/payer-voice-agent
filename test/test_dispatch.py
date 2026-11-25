@@ -220,22 +220,32 @@ def test_visit_limit_followup_is_derived_from_call_facts(
 @pytest.mark.parametrize(
     "service,diagnosis,expected",
     [
-        ("speech_therapy", "F84.0", True),
-        ("occupational_therapy", "F80.9", True),
-        ("physical_therapy", "F84.0", False),
-        ("mental_health_provider_outpatient", "F84.0", False),
-        ("speech_therapy", "R48.8", False),
-        ("speech_therapy", "F81.0", False),
-        ("speech_therapy", " f80.2 ", True),
-        ("speech_therapy", "", False),
+        ("speech_therapy", "F84.0", "habilitative"),
+        ("occupational_therapy", "F80.9", "habilitative"),
+        ("speech_therapy", " f80.2 ", "habilitative"),
+        ("speech_therapy", "R48.8", "rehabilitative"),
+        ("physical_therapy", "M54.5", "rehabilitative"),
+        ("speech_therapy", "", "rehabilitative"),
+        # Not settled by the call: the agent says it doesn't have that detail.
+        ("physical_therapy", "F84.0", None),
+        ("physical_therapy", "F82", None),
+        ("speech_therapy", "F81.0", None),
+        ("mental_health_provider_outpatient", "F84.0", None),
+        ("mental_health", "", None),
     ],
 )
-def test_developmental_therapy_is_asked_as_habilitative(service, diagnosis, expected):
-    rendered = prompts.instructions(
-        "verification", prepare(payload(service_type=service, dx_code=diagnosis))
+def test_therapy_benefit_follows_service_and_diagnosis(service, diagnosis, expected):
+    spec = prepare(payload(service_type=service, dx_code=diagnosis))
+    rendered = prompts.instructions("verification", spec)
+
+    assert spec.therapy_benefit == expected
+    habilitative = expected == "habilitative"
+    assert ("looking for habilitative" in rendered) is habilitative
+    assert ("The services are habilitative" in rendered) is habilitative
+    assert ("rehabilitative or general" in rendered) is habilitative
+    assert ("habilitative or rehabilitative?: rehabilitative" in rendered) is (
+        expected == "rehabilitative"
     )
-    assert ("looking for habilitative" in rendered) is expected
-    assert ("The services are habilitative" in rendered) is expected
 
 
 def test_sample_loads_from_another_directory(monkeypatch, tmp_path):

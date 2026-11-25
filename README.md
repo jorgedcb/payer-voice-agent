@@ -104,7 +104,7 @@ uv run pytest test/navigator/     # navigator tests
 uv run pytest test/call_flow/     # transitions between agents
 uv run pytest test/interview/ --offline
 uv run pytest test/navigator/ -m "live and not quarantine"
-LK_TEST_MODEL=openai/gpt-4.1 uv run pytest   # compare a different model
+LK_TEST_MODEL=openai/gpt-6-luna LK_TEST_REASONING=low uv run pytest   # compare a different model
 ```
 
 ## Running it

@@ -38,13 +38,31 @@ selection by participant kind rather than assuming the same model fits both.
 
 ## Model selection
 
-**Decision:** the interview uses GPT-4.1 with Gemma as its provider-error fallback;
-the navigator uses GPT-5.6 Luna with Gemini 3.8 Flash as its fallback. Fallback
-does not evaluate response quality.
+**Decision:** the interview uses GPT-6 Sol with reasoning effort `none`, with Gemma
+as its provider-error fallback; the navigator uses GPT-5.6 Luna with Gemini 3.8
+Flash as its fallback. Fallback does not evaluate response quality.
 
 **History:** on a seeded stage-direction failure context, Gemma spoke stage
 directions in 6 of 10 runs and GPT-4.1 in 0 of 10. This motivated the interview
 order. It was a small, context-specific measurement, not a general model ranking.
+
+OpenAI shuts GPT-4.1 down in its API on 2027-01-14, so in November 2026 the
+interview moved to GPT-6 Sol. On the interview's own prompt and tools, time to
+first token over 12 interleaved requests per setting (median): GPT-4.1 571 ms,
+GPT-6 Sol `none` 654 ms, Sol `minimal` 699 ms, GPT-6 Luna `low` 726 ms, Sol at the
+provider's default 1,484 ms. GPT-6.2 Sol (841 ms) and GPT-6.1 Sol (about 1.2 s)
+were slower at every effort, and Luna at `minimal` or `none` opened every turn
+with a tool call instead of speaking. GPT-6.1, GPT-6.2 and the 6.1 and 6.2 Luna
+models were not available through LiveKit Inference. Before prompt changes, Sol
+`none` failed 6 to 7 of the 79 live interview tests per run and Luna `low` 6 to
+9; the failures were rules GPT-4.1 had filled in on its own (asking for a
+reference when the representative says goodbye, answering "rehabilitative" for a
+non-developmental diagnosis, the diagnosis question after a volunteered visit
+limit, a declined reimbursement basis), now written into the prompts. With them,
+Sol `none` passed the full live suite in three runs except one failure each in
+two of them, and spoke no stage directions in 10 of 10 runs on the seeded
+context.
+
 The navigator tolerates more model latency while traversing menus; its fallback
 was recorded as passing 9/9 navigator tests on each of three runs, about two
 seconds slower per turn. A different provider also reduces shared outage risk.

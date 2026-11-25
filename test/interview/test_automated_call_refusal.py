@@ -100,7 +100,7 @@ async def test_live_representative_question_gets_only_yes(
     ],
 )
 async def test_asked_if_ai_says_so_and_gives_a_reason_to_stay(
-    session, start_assistant, llm, question
+    session, start_assistant, judge_llm, question
 ) -> None:
     agent = await start_assistant(caller_first_name="Greta", caller_last_initial="S")
     await replay(agent, PICKUP)
@@ -110,7 +110,7 @@ async def test_asked_if_ai_says_so_and_gives_a_reason_to_stay(
 
     assert not called(result, "end_call")
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=(
             "Says plainly that it is a virtual assistant or an AI calling for the "
             "provider's office, and gives a reason to stay on the line: trained for "

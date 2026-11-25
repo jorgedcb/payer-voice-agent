@@ -171,8 +171,9 @@ class CallReferenceTask(AgentTask[CallReferenceResult]):
 
         Args:
             reference: The complete reference, e.g. "AB73921", or the composed value
-                when the representative said the reference is their name and the date:
-                the name as recorded, then the date in digits, e.g. "Jamie 09/12/2026".
+                only when the representative said the reference is their name and the
+                date: the name as recorded, then the date in digits, e.g.
+                "Jamie 09/12/2026". Never a composed value while they look one up.
         """
         reference = reference.strip()
         if not reference:

@@ -35,7 +35,7 @@ HISTORY = [
 async def test_correct_readback_gets_only_a_brief_confirmation(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     question,
 ):
     agent = await start_assistant(
@@ -49,7 +49,7 @@ async def test_correct_readback_gets_only_a_brief_confirmation(
     show_response(question, result)
     message = result.expect.next_event().is_message(role="assistant")
     await message.judge(
-        llm,
+        judge_llm,
         intent=(
             "Briefly acknowledges that the read-back is accurate without restating "
             "the confirmed information or introducing an unrelated topic. Natural "
@@ -100,7 +100,7 @@ async def test_correct_readback_gets_only_a_brief_confirmation(
 async def test_confirmation_still_handles_corrections_and_repeat_requests(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     question,
     intent,
 ):
@@ -117,6 +117,6 @@ async def test_confirmation_still_handles_corrections_and_repeat_requests(
     await (
         result.expect.next_event()
         .is_message(role="assistant")
-        .judge(llm, intent=intent)
+        .judge(judge_llm, intent=intent)
     )
     result.expect.no_more_events()

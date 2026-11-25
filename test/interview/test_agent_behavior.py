@@ -3,7 +3,7 @@ from support.calls import replay, show_response
 
 
 @pytest.mark.asyncio
-async def test_assistant_greeting(session, start_assistant, llm) -> None:
+async def test_assistant_greeting(session, start_assistant, judge_llm) -> None:
     await start_assistant(caller_first_name="Annie", caller_last_initial="S")
 
     result = await session.run(
@@ -14,7 +14,7 @@ async def test_assistant_greeting(session, start_assistant, llm) -> None:
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Says it is calling about benefits information for one of the plan's "
                 "members, in one or two short sentences. It may give its name. It does "
@@ -29,7 +29,7 @@ async def test_assistant_greeting(session, start_assistant, llm) -> None:
 
 @pytest.mark.asyncio
 async def test_cpt_codes_turn_leaves_the_representative_something_to_do(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ) -> None:
     """A rep who answers the opening with a bare "Yes, please." is waiting for the
     codes. The turn must give them, with grammar that fits one place of service,
@@ -63,7 +63,7 @@ async def test_cpt_codes_turn_leaves_the_representative_something_to_do(
         "turn must end with a question for the representative"
     )
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Gives the CPT codes 97110, 97112 and 97116 with digits spoken as "
             "words (a spoken range such as 'nine, seven, one, one, zero to nine, "

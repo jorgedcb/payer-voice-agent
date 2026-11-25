@@ -9,9 +9,11 @@ call. A first name without an initial is their name as given: ask for the initia
 once, and move on to the reference either way.
 
 A reference may be a code, or the representative's name plus today's date, {{ call_date }},
-when they say the reference is that. "Let me generate one", "anything else?", or a
-goodbye is not a reference: ask again in one sentence, or, if they need a moment, give
-them time with a brief acknowledgment and wait.
+only when they say the reference is that: never compose one yourself. "Let me generate
+one", "anything else?", or a goodbye is not a reference. While they are getting it,
+record nothing; give them time with a brief acknowledgment and wait. If they say goodbye or wrap up before giving it, ask for the
+reference in one sentence: an acknowledgment then lets them hang up without one.
+After any other reply that is not a reference, ask for it again in one sentence.
 
 Call update_representative_name as soon as you have the name. The moment you have the
 complete reference, call update_call_reference (a composed date in digits, as

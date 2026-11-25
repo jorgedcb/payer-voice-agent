@@ -23,7 +23,7 @@ from support.calls import show_response, spoken_digits
 async def test_identifiers_are_paced_one_character_at_a_time_on_first_read(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     question,
     expected,
 ):
@@ -47,7 +47,7 @@ async def test_identifiers_are_paced_one_character_at_a_time_on_first_read(
     # Each character is its own word: the digits are never run together as a number.
     assert not re.search(r"\d{2,}", raw_response), raw_response
     await message.judge(
-        llm,
+        judge_llm,
         intent=f"Reads the complete identifier {expected} one character at a time, preserving every digit and letter in order, as plain spoken words with no markup or tags. Digits may be written numerically or as words, and letters may be spoken directly or phonetically. Wording and punctuation may vary.",
     )
     result.expect.no_more_events()
@@ -64,7 +64,7 @@ async def test_identifiers_are_paced_one_character_at_a_time_on_first_read(
 async def test_date_of_birth_is_read_naturally(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     dob,
     spoken_date,
 ):
@@ -76,7 +76,7 @@ async def test_date_of_birth_is_read_naturally(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=f"States the date of birth as {spoken_date}, using a spoken month name and a natural day and year rather than reading individual digits or an ISO date string. Preserve the exact month, day, and year; different natural wording is acceptable.",
         )
     )
@@ -86,7 +86,7 @@ async def test_date_of_birth_is_read_naturally(
 async def test_caller_name_is_spelled_with_the_phonetic_alphabet(
     session,
     start_assistant,
-    llm,
+    judge_llm,
 ):
     # On a live call, asked "how do you spell your name?", the agent said "A, n, n, i, e"
     # and the representative had to ask again, then prompted "a as in alpha".

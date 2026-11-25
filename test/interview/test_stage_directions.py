@@ -11,7 +11,8 @@ not reproduce the bug, so the test seeds that state and runs only the turn that
 broke: the representative saying nothing more than "Okay.".
 
 Failure rate on that context: 6/10 on google/gemma-4-31b-it, 0/10 on
-openai/gpt-4.1. Re-check with LK_TEST_MODEL.
+openai/gpt-4.1, 0/10 on openai/gpt-6-sol with reasoning effort none.
+Re-check with LK_TEST_MODEL.
 """
 
 import re

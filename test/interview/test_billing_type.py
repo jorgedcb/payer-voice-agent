@@ -51,7 +51,7 @@ PROFESSIONAL = (
     ],
 )
 async def test_billing_question_gets_professional(
-    session, start_assistant, llm, question
+    session, start_assistant, judge_llm, question
 ) -> None:
     agent = await start_assistant(**CLINIC)
     await replay(agent, PICKUP)
@@ -61,12 +61,12 @@ async def test_billing_question_gets_professional(
     await (
         result.expect.next_event()
         .is_message(role="assistant")
-        .judge(llm, intent=PROFESSIONAL)
+        .judge(judge_llm, intent=PROFESSIONAL)
     )
 
 
 async def test_representative_who_sees_professional_billing_is_agreed_with(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ) -> None:
     """The second time the representative asked on the call."""
     agent = await start_assistant(**CLINIC)
@@ -82,12 +82,12 @@ async def test_representative_who_sees_professional_billing_is_agreed_with(
     await (
         result.expect.next_event()
         .is_message(role="assistant")
-        .judge(llm, intent=PROFESSIONAL)
+        .judge(judge_llm, intent=PROFESSIONAL)
     )
 
 
 async def test_provider_type_is_the_therapy_practice(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ) -> None:
     """The Michigan representative's question."""
     agent = await start_assistant(**CLINIC)
@@ -100,7 +100,7 @@ async def test_provider_type_is_the_therapy_practice(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Describes the provider as a speech therapy practice or group. Does "
                 "not call it a facility, a hospital or outpatient facility. Wording "
@@ -110,7 +110,7 @@ async def test_provider_type_is_the_therapy_practice(
     )
 
 
-async def test_the_npi_is_the_groups(session, start_assistant, llm) -> None:
+async def test_the_npi_is_the_groups(session, start_assistant, judge_llm) -> None:
     agent = await start_assistant(**CLINIC)
     await replay(agent, PICKUP)
 
@@ -121,7 +121,7 @@ async def test_the_npi_is_the_groups(session, start_assistant, llm) -> None:
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent="Says it is the group's NPI, not an individual provider's. Wording may vary.",
         )
     )

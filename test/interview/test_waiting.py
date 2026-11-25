@@ -37,14 +37,16 @@ LOOKUP = [
         ),
     ],
 )
-async def test_yields_when_no_response_is_needed(session, start_assistant, llm, update):
+async def test_yields_when_no_response_is_needed(
+    session, start_assistant, judge_llm, update
+):
     agent = await start_assistant()
     await replay(agent, LOOKUP)
 
     result = await session.run(user_input=update)
     show_response(update, result)
 
-    await assert_yields_turn(result, llm, after=update)
+    await assert_yields_turn(result, judge_llm, after=update)
     assert session.current_agent is agent
 
 
@@ -79,7 +81,7 @@ async def test_yields_when_no_response_is_needed(session, start_assistant, llm, 
 async def test_answers_when_the_representative_needs_a_response(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     question,
     intent,
 ):
@@ -92,7 +94,7 @@ async def test_answers_when_the_representative_needs_a_response(
     assert not called(result, "end_call")
     assert_wait_is_exclusive(result)
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=f"In response to the representative saying {question!r}: {intent} "
         "A concise answer may rely on that context; it need not restate the question.",
     )

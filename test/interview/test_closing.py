@@ -9,6 +9,8 @@ import pytest
 from support.calls import (
     AETNA_ALL_TOPICS_ANSWER,
     AETNA_ALL_TOPICS_CALL,
+    AETNA_ALL_TOPICS_OOP_AS_SAID,
+    AETNA_ALL_TOPICS_OOP_CLEAR,
     AETNA_ALL_TOPICS_PATIENT,
     AETNA_EARLY_CLOSING_ANSWER,
     AETNA_EARLY_CLOSING_CALL,
@@ -63,7 +65,7 @@ LAST_ANSWER = "No, everything is based on medical necessity."
 async def test_representative_goodbye_during_transfer_does_not_start_closing(
     session,
     start_assistant,
-    llm,
+    judge_llm,
     farewell,
 ):
     # An Aetna call on 2026-09-18, at 4:41.
@@ -146,7 +148,7 @@ async def test_representative_goodbye_during_transfer_does_not_start_closing(
     )
     assert not isinstance(session.current_agent, CallReferenceTask)
     assert agent.call_reference is None
-    await assert_yields_turn(result, llm, after=farewell)
+    await assert_yields_turn(result, judge_llm, after=farewell)
 
     user_input = (
         "Hello, this is Morgan with the dedicated benefits team. How can I help you?"
@@ -155,7 +157,7 @@ async def test_representative_goodbye_during_transfer_does_not_start_closing(
     show_response(user_input, result)
     assert not called(result, "end_call")
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent="Starts or resumes a benefits inquiry with the new representative, "
         "either stating the purpose of the call or asking for benefits information. "
         "Does not ask for a call reference number or say goodbye.",
@@ -220,7 +222,7 @@ async def test_failed_transfer_with_no_way_to_continue_starts_closing(
     ],
 )
 async def test_closing_waits_for_open_benefit_topics(
-    session, start_assistant, llm, patient, history, last_answer, open_topics
+    session, start_assistant, judge_llm, patient, history, last_answer, open_topics
 ):
     # Aetna calls on 2026-10-13 and 2026-10-14 asked about other limitations or
     # exclusions at this turn and went on to end the call: the medical-necessity
@@ -237,7 +239,7 @@ async def test_closing_waits_for_open_benefit_topics(
     )
     assert session.current_agent is agent
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=(
             "Keeps the benefits verification going with a question about a specific "
             f"benefit or plan detail, such as {open_topics}. A follow-up on something "
@@ -253,7 +255,7 @@ async def test_closing_waits_for_open_benefit_topics(
 
 @pytest.mark.asyncio
 async def test_closing_question_follows_the_last_benefit_topic(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ):
     # The same clinic on another Aetna call on 2026-10-14, where every topic was
     # covered: the closing question is the right next turn, not more questions.
@@ -264,13 +266,45 @@ async def test_closing_question_follows_the_last_benefit_topic(
     show_response(AETNA_ALL_TOPICS_ANSWER, result)
 
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=(
             "Asks whether there are any other limitations or exclusions, in any "
             "wording; a brief acknowledgment may come first. It does not ask again "
             "about a benefit the representative already answered, such as visit "
             "limits, the out-of-pocket maximum, the deductible, medical necessity "
             "or the reimbursement rate."
+        ),
+    )
+
+
+@pytest.mark.asyncio
+async def test_garbled_answer_is_clarified_before_closing(
+    session, start_assistant, judge_llm
+):
+    # The same call with the out-of-pocket answer as it reached the agent: an
+    # answer that settles nothing is asked again, not closed over.
+    agent = await start_assistant(**AETNA_PT_CLINIC, **AETNA_ALL_TOPICS_PATIENT)
+    as_said = [
+        ("user", AETNA_ALL_TOPICS_OOP_AS_SAID)
+        if turn == ("user", AETNA_ALL_TOPICS_OOP_CLEAR)
+        else turn
+        for turn in AETNA_ALL_TOPICS_CALL
+    ]
+    assert as_said != AETNA_ALL_TOPICS_CALL
+    await replay(agent, as_said)
+
+    result = await session.run(user_input=AETNA_ALL_TOPICS_ANSWER)
+    show_response(AETNA_ALL_TOPICS_ANSWER, result)
+
+    assert not closing_started(session, result)
+    await result.expect.contains_message(role="assistant").judge(
+        judge_llm,
+        intent=(
+            "Asks again whether the out-of-pocket maximum applies to these "
+            "services, for one or both networks or places, in any wording; a "
+            "brief acknowledgment may come first. It is not the closing question "
+            "about other limitations or exclusions, and it does not ask for the "
+            "representative's name or a reference number."
         ),
     )
 
@@ -297,7 +331,7 @@ async def test_closing_question_follows_the_last_benefit_topic(
     ],
 )
 async def test_ending_with_topics_open_goes_back_to_them(
-    session, start_assistant, llm, more, last_answer, open_topics
+    session, start_assistant, judge_llm, more, last_answer, open_topics
 ):
     # An Aetna call on 2026-11-19 asked the closing question with topics still open,
     # followed up on the visit limit, and ended the call at the hard-maximum answer.
@@ -312,7 +346,7 @@ async def test_ending_with_topics_open_goes_back_to_them(
     assert agent.call_reference is None
     assert session.current_agent is agent, "The closing task must not start."
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=(
             "Keeps the benefits verification going with a question about a specific "
             f"benefit or plan detail, such as {open_topics}whether the out-of-pocket "
@@ -352,7 +386,9 @@ async def at_closing_task(session, start_assistant, earlier=(), **overrides):
 
 @pytest.mark.quarantine  # 2026-09-18: thanks "Jamie R" in words without recording the name, 3 in 5 runs on main; measured nightly
 @pytest.mark.asyncio
-async def test_last_answer_hands_the_closing_to_the_task(session, start_assistant, llm):
+async def test_last_answer_hands_the_closing_to_the_task(
+    session, start_assistant, judge_llm
+):
     # The interview asks nothing after the open question: the task asks for
     # the name, the interview never asks for a reference.
     await at_closing_task(session, start_assistant)
@@ -361,14 +397,14 @@ async def test_last_answer_hands_the_closing_to_the_task(session, start_assistan
     assert "Jamie" in (session.current_agent.representative_name or "")
     assert not ended(result)
     await result.expect.contains_message(role="assistant").judge(
-        llm, intent="Asks for the call reference number for today's call."
+        judge_llm, intent="Asks for the call reference number for today's call."
     )
 
 
 @pytest.mark.quarantine  # 2026-11-23: rep's name matching the caller's goes unrecorded, 6 in 8 runs on main; measured nightly
 @pytest.mark.asyncio
 async def test_first_name_alone_is_not_given_the_callers_initial(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ):
     # From a real call: the representative gave only a first name, the same as
     # the caller's, and was recorded with the initial from the caller's own
@@ -390,7 +426,7 @@ async def test_first_name_alone_is_not_given_the_callers_initial(
     assert session.current_agent.representative_name == "Megan"
     assert not ended(result)
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=(
             "Asks for the representative's last initial or the call reference. "
             "Does not state a last initial for the representative."
@@ -399,7 +435,7 @@ async def test_first_name_alone_is_not_given_the_callers_initial(
 
 
 @pytest.mark.asyncio
-async def test_goodbye_while_reference_pending(session, start_assistant, llm):
+async def test_goodbye_while_reference_pending(session, start_assistant, judge_llm):
     agent = await at_closing_task(session, start_assistant)
     await session.run(user_input="Jamie R.")
     user_input = (
@@ -412,14 +448,14 @@ async def test_goodbye_while_reference_pending(session, start_assistant, llm):
     assert agent.call_reference is None
     assert session.current_agent.current_reference is None
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent="Asks for the call reference number. Does not say goodbye or claim to have a reference.",
     )
 
 
 @pytest.mark.asyncio
 async def test_reference_is_read_back_and_confirmed_before_ending(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ):
     agent = await at_closing_task(session, start_assistant)
     await session.run(user_input="Jamie R.")
@@ -429,7 +465,7 @@ async def test_reference_is_read_back_and_confirmed_before_ending(
     result.expect.contains_function_call(name="update_call_reference")
     assert session.current_agent.current_reference == "AB73921"
     await result.expect.contains_message(role="assistant").judge(
-        llm, intent="Reads back the complete reference AB73921 to confirm it."
+        judge_llm, intent="Reads back the complete reference AB73921 to confirm it."
     )
     assert not ended(result)
 
@@ -443,7 +479,9 @@ async def test_reference_is_read_back_and_confirmed_before_ending(
 
 
 @pytest.mark.asyncio
-async def test_name_and_reference_volunteered_together(session, start_assistant, llm):
+async def test_name_and_reference_volunteered_together(
+    session, start_assistant, judge_llm
+):
     agent = await at_closing_task(session, start_assistant)
     user_input = "It's Jamie R, and your reference number for today is AB73921."
     result = await session.run(user_input=user_input)
@@ -453,7 +491,7 @@ async def test_name_and_reference_volunteered_together(session, start_assistant,
     assert "Jamie" in (session.current_agent.representative_name or "")
     assert session.current_agent.current_reference == "AB73921"
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent="Reads back the reference AB73921 and asks whether it is correct. Does not ask for the name or the reference as if they had not been given.",
     )
 
@@ -495,19 +533,28 @@ async def test_cannot_verify_or_provide_reference(session, start_assistant):
 
 
 @pytest.mark.asyncio
-async def test_reference_composed_from_name_and_date(session, start_assistant, llm):
+async def test_reference_composed_from_name_and_date(
+    session, start_assistant, judge_llm
+):
     agent = await at_closing_task(session, start_assistant)
     await session.run(user_input="Jamie R.")
     user_input = "We don't have numbers. The reference is my name and today's date."
     result = await session.run(user_input=user_input)
     show_response(user_input, result)
     result.expect.contains_function_call(name="update_call_reference")
+    today = agent.call_date
     recorded = session.current_agent.current_reference or ""
-    assert "Jamie" in recorded and str(agent.call_date.year) in recorded, recorded
+    assert "Jamie" in recorded and str(today.year) in recorded, recorded
     assert not ended(result)
+    # The judge has no clock of its own: name the call date, or it judges
+    # against whatever date it assumes.
     await result.expect.contains_message(role="assistant").judge(
-        llm,
-        intent="Reads back a reference made of the name Jamie R and today's date, and asks whether it is correct. Does not ask for a reference number.",
+        judge_llm,
+        intent=(
+            "Reads back a reference made of the name Jamie R and today's date, "
+            f"{today:%B} {today.day}, {today.year}, in any spoken form, and asks "
+            "whether it is correct. Does not ask for a reference number."
+        ),
     )
 
     result = await session.run(user_input="Yes, that's right. Bye.")
@@ -519,7 +566,7 @@ async def test_reference_composed_from_name_and_date(session, start_assistant, l
 
 
 @pytest.mark.asyncio
-async def test_correction_after_read_back(session, start_assistant, llm):
+async def test_correction_after_read_back(session, start_assistant, judge_llm):
     agent = await at_closing_task(session, start_assistant)
     await session.run(user_input="Jamie R.")
     await session.run(user_input="Your reference number is AB73921.")
@@ -529,7 +576,7 @@ async def test_correction_after_read_back(session, start_assistant, llm):
     assert session.current_agent.current_reference == "AB73927"
     assert not ended(result)
     await result.expect.contains_message(role="assistant").judge(
-        llm, intent="Reads back AB73927 and asks whether it is correct."
+        judge_llm, intent="Reads back AB73927 and asks whether it is correct."
     )
 
     result = await session.run(user_input="Correct, thanks.")
@@ -541,7 +588,7 @@ async def test_correction_after_read_back(session, start_assistant, llm):
 
 
 @pytest.mark.asyncio
-async def test_waits_while_reference_is_generated(session, start_assistant, llm):
+async def test_waits_while_reference_is_generated(session, start_assistant, judge_llm):
     agent = await at_closing_task(session, start_assistant)
     await session.run(user_input="Jamie R.")
     user_input = "Sure, let me pull that up for you, one moment."
@@ -554,7 +601,7 @@ async def test_waits_while_reference_is_generated(session, start_assistant, llm)
             ev.type == "function_call" and ev.item.name == "no_reference_available"
         )
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent="A brief acknowledgment that gives the representative time, such as 'Okay', 'Sure, take your time' or 'Sure, I'll wait for it'. Saying it will wait for the reference is fine; asking for it again is not. Does not ask a new question or say goodbye.",
     )
 

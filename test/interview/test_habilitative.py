@@ -68,7 +68,7 @@ ABOUT_THE_DIAGNOSIS = re.compile(r"diagnos|F as in|F eight|F84", re.IGNORECASE)
 )
 @pytest.mark.parametrize("diagnosis", ["F84.0", "F80.9"])
 async def test_developmental_diagnosis_is_habilitative(
-    session, start_assistant, llm, question, diagnosis
+    session, start_assistant, judge_llm, question, diagnosis
 ) -> None:
     agent = await start_assistant(**SPEECH, dx_code=diagnosis)
     await replay(agent, CODES_READ)
@@ -83,7 +83,7 @@ async def test_developmental_diagnosis_is_habilitative(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Answers that the services are habilitative; a bare 'Habilitative.' "
                 "is enough. It does not say or agree that they are rehabilitative or "
@@ -97,7 +97,7 @@ async def test_developmental_diagnosis_is_habilitative(
 # R13.11 is dysphagia, a clinic's default for speech therapy.
 @pytest.mark.parametrize("diagnosis", ["", "R13.11"], ids=["no-code", "other-code"])
 async def test_general_therapy_stays_rehabilitative(
-    session, start_assistant, llm, diagnosis
+    session, start_assistant, judge_llm, diagnosis
 ) -> None:
     agent = await start_assistant(**SPEECH, dx_code=diagnosis)
     await replay(agent, CODES_READ)
@@ -112,7 +112,7 @@ async def test_general_therapy_stays_rehabilitative(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Answers that the services are rehabilitative. It does not say they "
                 "are habilitative."
@@ -180,7 +180,7 @@ LIMIT_UNDER_THE_DIAGNOSIS = (
 )
 
 
-async def asks_about_the_diagnosis(session, llm, lines) -> None:
+async def asks_about_the_diagnosis(session, judge_llm, lines) -> None:
     """The diagnosis question may come right away or after the limit's own
     questions; the turns given cover both orders."""
     asked = []
@@ -192,7 +192,7 @@ async def asks_about_the_diagnosis(session, llm, lines) -> None:
             await (
                 result.expect.next_event()
                 .is_message(role="assistant")
-                .judge(llm, intent=LIMIT_UNDER_THE_DIAGNOSIS)
+                .judge(judge_llm, intent=LIMIT_UNDER_THE_DIAGNOSIS)
             )
             return
     pytest.fail(f"never asked how the diagnosis changes the visit limits: {asked!r}")
@@ -211,18 +211,18 @@ async def asks_about_the_diagnosis(session, llm, lines) -> None:
     ids=["a-limit", "no-limit"],
 )
 async def test_visit_limits_are_checked_against_the_diagnosis(
-    session, start_assistant, llm, answer, follow_up
+    session, start_assistant, judge_llm, answer, follow_up
 ) -> None:
     agent = await start_assistant(**SPEECH_CLINIC, **AETNA_VISIT_LIMITS_PATIENT)
     # Up to the agent asking about visit limits.
     await replay(agent, as_habilitative_speech(AETNA_VISIT_LIMITS_CALL[:-2]))
 
-    await asks_about_the_diagnosis(session, llm, (answer, follow_up))
+    await asks_about_the_diagnosis(session, judge_llm, (answer, follow_up))
 
 
 @pytest.mark.asyncio
 async def test_a_volunteered_limit_is_checked_against_the_diagnosis(
-    session, start_assistant, llm
+    session, start_assistant, judge_llm
 ) -> None:
     """The read-out named the limit, so the agent never asks for one itself."""
     agent = await start_assistant(**SPEECH_CLINIC, **AETNA_VISIT_LIMITS_PATIENT)
@@ -231,8 +231,14 @@ async def test_a_volunteered_limit_is_checked_against_the_diagnosis(
     *before, (_, out_of_state) = history[:-3]
 
     await replay(agent, before)
+    # The call's answer was "No. Uh, yes.": an agent may ask which it is first.
     await asks_about_the_diagnosis(
         session,
-        llm,
-        (out_of_state, "It's a hard maximum, and none have been used.", "Okay."),
+        judge_llm,
+        (
+            out_of_state,
+            "Yes, out of state is covered.",
+            "It's a hard maximum, and none have been used.",
+            "Okay.",
+        ),
     )

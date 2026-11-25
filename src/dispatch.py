@@ -61,16 +61,33 @@ class CallSpec(BaseModel):
     )
 
     @property
-    def habilitative(self) -> bool:
-        """Speech or occupational therapy for a developmental diagnosis.
+    def therapy_benefit(self) -> Literal["habilitative", "rehabilitative"] | None:
+        """Which therapy benefit the representative should read, when the call
+        settles it; representatives ask which one before they read a benefit.
 
-        Payers file it under habilitative benefits whatever the payer, and their
-        representatives ask which one before they read a benefit.
+        Speech or occupational therapy for a developmental diagnosis is
+        habilitative, whatever the payer. Physical, occupational or speech
+        therapy with no diagnosis or a non-developmental one is rehabilitative.
+        Anything else is not settled here: ABA, physical therapy for a
+        developmental diagnosis, and F81's educational codes.
         """
-        return self.service_type in (
-            "speech_therapy",
+        if self.service_type not in (
+            "physical_therapy",
             "occupational_therapy",
-        ) and bool(DEVELOPMENTAL_DIAGNOSIS.match(self.dx_code))
+            "speech_therapy",
+        ):
+            return None
+        if DEVELOPMENTAL_DIAGNOSIS.match(self.dx_code):
+            if self.service_type == "physical_therapy":
+                return None
+            return "habilitative"
+        if self.dx_code.startswith("F81"):
+            return None
+        return "rehabilitative"
+
+    @property
+    def habilitative(self) -> bool:
+        return self.therapy_benefit == "habilitative"
 
     @field_validator("dx_code")
     @classmethod

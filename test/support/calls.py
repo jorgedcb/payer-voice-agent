@@ -1338,10 +1338,16 @@ AETNA_OUT_OF_STATE_ANSWER = (
 # covered every topic before closing: the provider is out of network, the
 # representative answered the medical-necessity question and then declined to
 # give a reimbursement basis. The agent asked about other limitations or
-# exclusions next, which is the turn the closing should still take. Two marked
-# exchanges are added so every topic is settled: the real call never asked
-# whether there is a copay out of network, or whether the in-network copay
-# counts toward the out-of-pocket maximum.
+# exclusions next, which is the turn the closing should still take. Two
+# exchanges are added, each marked, so every topic is settled: the real call
+# never asked whether there is a copay out of network, or whether the in-network
+# copay counts toward the out-of-pocket maximum. The representative's answer to
+# whether the out-of-pocket maximum applies reached the agent garbled; the call
+# carries a clear answer, and a test replays the garbled one as said.
+AETNA_ALL_TOPICS_OOP_AS_SAID = "Over these were out of network."
+AETNA_ALL_TOPICS_OOP_CLEAR = (
+    "Yes, it applies in and out of network, for the office and telehealth."
+)
 AETNA_ALL_TOPICS_PATIENT = {
     "member_name": "Lena Ortiz",
     "member_id": "W527183946",
@@ -1678,7 +1684,9 @@ AETNA_ALL_TOPICS_CALL = [
             "in network and out of network, in the office and via telehealth?"
         ),
     ),
-    ("user", "Over these were out of network."),
+    # Replaced: the representative's garbled answer, kept as
+    # AETNA_ALL_TOPICS_OOP_AS_SAID for the test that replays it as said.
+    ("user", AETNA_ALL_TOPICS_OOP_CLEAR),
     (
         "assistant",
         (

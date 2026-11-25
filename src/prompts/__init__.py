@@ -97,6 +97,7 @@ def instructions(
         **spec.model_dump(),
         call_date=today_call_date(call_date),
         habilitative=spec.habilitative,
+        therapy_benefit=spec.therapy_benefit,
         member_id_spelled=one_at_a_time(spec.member_id),
         phase=phase,
     )

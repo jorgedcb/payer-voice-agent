@@ -48,8 +48,9 @@ PROMPT = "navigator"
 
 # The navigator's own model, overriding the session's. The two phases have
 # opposite constraints: the interview answers a waiting human inside a tight
-# budget on calibrated gpt-4.1, while a menu tolerates a couple of seconds, so
-# the navigator gets the newer model. The tests run against this constant.
+# budget on a model run with reasoning off, while a menu tolerates a couple of
+# seconds, so the navigator gets a reasoning model. The tests run against this
+# constant.
 NAVIGATOR_LLM = "openai/gpt-5.6-luna"
 # Takes over only when luna's endpoint errors, never on output quality. Chosen
 # from a different vendor so one provider outage cannot take both. Historical

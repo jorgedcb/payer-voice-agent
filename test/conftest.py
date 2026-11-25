@@ -5,13 +5,22 @@ suite can't drift apart. Override them for a comparison run without editing any
 file:
 
     LK_TEST_MODEL=google/gemma-4-31b-it uv run pytest
-    LK_NAVIGATOR_TEST_MODEL=openai/gpt-4.1 uv run pytest test/navigator/
+    LK_NAVIGATOR_TEST_MODEL=openai/gpt-6-sol uv run pytest test/navigator/
+    LK_TEST_MODEL=openai/gpt-6-luna LK_TEST_REASONING=low uv run pytest test/interview/
+
+LK_TEST_REASONING sets the interview model's reasoning effort. With neither
+set, the interview's LLM is built exactly as production builds it
+(agent.primary_llm); with only LK_TEST_MODEL, that model runs at its provider's
+default effort.
+
+The judge is neither: it is pinned (JUDGE_MODEL), so a comparison run changes
+the model under test and not the grader.
 """
 
 from os import getenv
 
 import pytest
-from livekit.agents import AgentSession, inference, mock_tools
+from livekit.agents import NOT_GIVEN, AgentSession, inference, mock_tools
 
 import agent
 import navigator
@@ -22,8 +31,12 @@ from prompts import call_date_today
 
 # Two models, two knobs: the interview runs on the session's model, the
 # navigator on its own. Each suite runs against what production runs.
-TEST_MODEL = getenv("LK_TEST_MODEL", agent.PRIMARY_LLM)
+TEST_MODEL = getenv("LK_TEST_MODEL")
+TEST_REASONING = getenv("LK_TEST_REASONING")
 NAVIGATOR_TEST_MODEL = getenv("LK_NAVIGATOR_TEST_MODEL", navigator.NAVIGATOR_LLM)
+# Grades judge() intents. Reasoning stays at the provider's default: grading has
+# no latency budget, and the reply is judged against the intent, not answered.
+JUDGE_MODEL = "openai/gpt-6-sol"
 
 
 def pytest_addoption(parser):
@@ -33,6 +46,7 @@ def pytest_addoption(parser):
 
 
 MODEL_FIXTURES = {
+    "judge_llm",
     "llm",
     "navigator_llm",
     "session",
@@ -65,10 +79,28 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture
 async def llm(request):
-    """An LLM for the agent under test, and for judge() where a test uses it."""
+    """The interview's LLM, as production runs it unless overridden."""
     if request.config.getoption("--offline"):
         pytest.skip("requires LiveKit inference")
-    async with inference.LLM(model=TEST_MODEL) as model:
+    if TEST_MODEL is None and TEST_REASONING is None:
+        model = agent.primary_llm()
+    else:
+        # A comparison run: a named model starts from its provider's default
+        # effort, not production's, which was chosen for production's model.
+        model = agent.primary_llm(
+            model=TEST_MODEL or agent.PRIMARY_LLM,
+            reasoning=TEST_REASONING or NOT_GIVEN,
+        )
+    async with model:
+        yield model
+
+
+@pytest.fixture
+async def judge_llm(request):
+    """The grader for judge(), the same whatever model is under test."""
+    if request.config.getoption("--offline"):
+        pytest.skip("requires LiveKit inference")
+    async with inference.LLM(model=JUDGE_MODEL) as model:
         yield model
 
 

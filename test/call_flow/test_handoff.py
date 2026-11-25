@@ -14,7 +14,7 @@ REP_GREETING = (
 
 
 async def test_rep_greeting_hands_off_to_interview(
-    session, start_navigator, llm
+    session, start_navigator, judge_llm
 ) -> None:
     await start_navigator(caller_first_name="Greta", caller_last_initial="S")
 
@@ -30,7 +30,7 @@ async def test_rep_greeting_hands_off_to_interview(
     spoken = result.expect.next_event().is_message(role="assistant")
     assert spoken.event().item.text_content == opening
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Answers the representative's 'how can I help you' by saying it is calling "
             "about benefits for one of their members, in one or two short sentences. "
@@ -52,7 +52,7 @@ NAME_REQUEST = (
 
 
 async def test_name_request_gets_only_the_name_and_initial(
-    session, start_navigator, llm
+    session, start_navigator, judge_llm
 ) -> None:
     await start_navigator(caller_first_name="Greta", caller_last_initial="S")
 
@@ -65,7 +65,7 @@ async def test_name_request_gets_only_the_name_and_initial(
     spoken = result.expect.next_event().is_message(role="assistant")
     assert spoken.event().item.text_content == opening
     await spoken.judge(
-        llm,
+        judge_llm,
         intent=(
             "Gives its first name, Greta, and its last initial S, spelled out in some "
             "form such as 's for sierra' or 'S as in Sierra', in one or two short "
@@ -82,7 +82,7 @@ BARE_GREETING = "Thank you for holding. This is Wilson."
 
 
 async def test_a_bare_greeting_still_gets_the_reason_for_the_call(
-    session, start_navigator, llm
+    session, start_navigator, judge_llm
 ) -> None:
     await start_navigator(caller_first_name="Greta", caller_last_initial="S")
 
@@ -92,7 +92,7 @@ async def test_a_bare_greeting_still_gets_the_reason_for_the_call(
     opening = handoff_opening(result)
     assert opening.strip(), "handed off with nothing to say"
     await result.expect.contains_message(role="assistant").judge(
-        llm,
+        judge_llm,
         intent=(
             "Answers with more than a greeting: it gives its name, or says it is "
             "calling to check benefits for one of their members, or both. A reply "
@@ -125,7 +125,7 @@ async def test_a_person_who_answers_without_a_name_is_handed_off_once_they_say_s
 
 
 async def test_interview_does_not_reintroduce_after_its_opening(
-    session, start_navigator, llm
+    session, start_navigator, judge_llm
 ) -> None:
     # The opening is already in the conversation: the model must treat it as
     # said. The follow-up is a turn where re-introducing is a live option, not a
@@ -142,7 +142,7 @@ async def test_interview_does_not_reintroduce_after_its_opening(
         result.expect.next_event()
         .is_message(role="assistant")
         .judge(
-            llm,
+            judge_llm,
             intent=(
                 "Confirms it is still on the line, in at most a sentence or two; a "
                 "bare 'Yes.' is enough. Does not "
