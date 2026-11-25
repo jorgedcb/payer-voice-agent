@@ -54,9 +54,6 @@ LAST_ANSWER = "No, everything is based on medical necessity."
             "Your reference for my part of the call is AB73921. "
             "Please stay on the line for the next team. Goodbye.",
             id="reference-before-transfer",
-            # 2026-11-13: speaks alongside `wait` instead of only waiting, 1 in 5
-            # runs on main; measured nightly.
-            marks=pytest.mark.quarantine,
         ),
     ],
 )
@@ -401,7 +398,6 @@ async def at_closing_task(session, start_assistant):
     return agent
 
 
-@pytest.mark.quarantine  # 2026-09-18: thanks "Jamie R" in words without recording the name, 3 in 5 runs on main; measured nightly
 @pytest.mark.asyncio
 async def test_last_answer_hands_the_closing_to_the_task(
     session, start_assistant, judge_llm
@@ -418,7 +414,6 @@ async def test_last_answer_hands_the_closing_to_the_task(
     )
 
 
-@pytest.mark.quarantine  # 2026-11-23: rep's name matching the caller's goes unrecorded, 6 in 8 runs on main; measured nightly
 @pytest.mark.asyncio
 async def test_first_name_alone_is_not_given_the_callers_initial(
     session, start_assistant, judge_llm

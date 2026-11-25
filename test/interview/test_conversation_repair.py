@@ -234,9 +234,7 @@ async def test_explicit_name_confirmation_still_corrects_the_name(
 @pytest.mark.parametrize(
     "heard_name",
     [
-        # 2026-11-13: corrects or spells the name unasked, 1 in 5 runs on main;
-        # measured nightly.
-        pytest.param("Anita", marks=pytest.mark.quarantine),
+        "Anita",
         "Annie",
     ],
 )

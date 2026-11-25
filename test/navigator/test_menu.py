@@ -357,9 +357,6 @@ async def test_benefit_details_custom_instruction_declines(
     assert spoken(result) == ""
 
 
-# 2026-11-17: 2 of 16 runs key the ID; the rest speak it or key a different letter
-# form. No rule says what a letter becomes on the keypad; measured nightly.
-@pytest.mark.quarantine
 async def test_enter_member_id_with_pound_in_one_call(session, start_navigator) -> None:
     await start_navigator()
 
@@ -447,7 +444,6 @@ async def test_offer_of_a_representative_is_taken(session, start_navigator) -> N
     assert presses(result) == [["0"]]
 
 
-@pytest.mark.quarantine  # 2026-09-18: presses a key on a read-back it should deny, 2 in 5 runs on main; measured nightly
 async def test_aetna_readback_of_someone_else_is_denied(
     session, start_navigator
 ) -> None:

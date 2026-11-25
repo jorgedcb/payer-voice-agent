@@ -81,9 +81,10 @@ handoff with its opening (median of 20, two greetings): GPT-5.6 Luna 1,148 and
 The test results are for Sol at the provider's default effort. Sol passed the
 navigator tests in three of three runs, and GPT-6 Luna as well; on the final
 version, the 96 navigator and call-flow tests passed in two of three runs (one
-BlueCard handoff failed once), the Aetna tests 10 of 10, and both quarantined
-navigator tests 10 of 10. The difference was the Aetna assistant's full route,
-replayed from a 2026-11-20 call: Sol passed it 10 of 10, GPT-6 Luna 8 of 10 and
+BlueCard handoff failed once), the Aetna tests 10 of 10, and the two navigator
+tests then quarantined (keying a lettered member ID with its pound, denying an
+Aetna read-back of someone else) 10 of 10. The difference was the Aetna
+assistant's full route, replayed from a 2026-11-20 call: Sol passed it 10 of 10, GPT-6 Luna 8 of 10 and
 GPT-5.6 Luna 3 of 10. The failures all spoke the date of birth as "05/14/2018",
 the form the prompt showed it in, so the prompt now shows it in words as well.
 An earlier version of that test split the transfer announcement into separate
@@ -93,7 +94,8 @@ to the queue's shorter end-of-turn wait. On that version both GPT-6 models
 handed off on its lone "Okay?".
 
 The navigator then went to effort `none`, to match the interview, without
-re-running those tests on it; at `none` only the pickup turn above is measured.
+re-running those tests on it. The two formerly quarantined navigator tests were
+measured at `none` later (below); of the rest, only the pickup turn above is.
 
 More reasoning does not stand in for those interview rules. With them taken out
 of the prompts, Sol failed the tests behind them at `none`, `minimal` and `low`
@@ -114,10 +116,37 @@ slower: its first token took 1.46 s (median of 15, p90 2.8 s) against Gemma's
 0.68 s, and setting its reasoning effort did not change that. It only answers
 while OpenAI's endpoint is failing.
 
+The seven tests quarantined under GPT-4.1 and GPT-5.6 Luna went back into the
+PR gate on 2026-11-25. Each passed 5 of 5 in that day's nightly, the first with
+the interview on Sol and the navigator still on Luna, and 10 of 10 on main with
+both phases on Sol at `none` and no closing gate. The two that had full nights
+before were run 30 more times and passed all 30. The full gated suite with all
+seven took 6 min 43 s (168 tests), against the nightly's 15-minute and the PR
+job's 20-minute limits. What each was quarantined for, and its nightly range
+from 2026-11-21 to 2026-11-24:
+
+| Test | Quarantined for | Nightly, of 5 |
+|---|---|---|
+| `test_menu.py::test_enter_member_id_with_pound_in_one_call` | speaks the ID or keys another letter form; 2 of 16 keyed it (2026-11-17) | 0 to 2 |
+| `test_menu.py::test_aetna_readback_of_someone_else_is_denied` | presses a key on a read-back it should deny | 1 to 5 |
+| `test_closing.py::test_last_answer_hands_the_closing_to_the_task` | thanks the rep by name without recording it | 3 to 4 |
+| `test_closing.py::test_first_name_alone_is_not_given_the_callers_initial` | a rep's name matching the caller's goes unrecorded, 6 of 8 | 2 to 4 (quarantined from 11-23) |
+| `test_conversation_repair.py::…[Anita]` | corrects or offers to spell the caller's name unasked | 4 |
+| `test_waiting.py::…[hold-permission]` | agrees to hold and calls `wait` in the same turn | 4 to 5 |
+| `test_closing.py::…[reference-before-transfer]` | speaks alongside `wait` instead of only waiting | 4 to 5 |
+
+The member-ID test began passing the night the letters rule (Member IDs with
+letters) landed, with the navigator still on Luna; the other six the night the
+interview moved to Sol.
+
 **Code and coverage:** [`agent.py`](../src/agent.py),
 [`navigator.py`](../src/navigator.py),
-[`test_stage_directions.py`](../test/interview/test_stage_directions.py), and
-the [`navigator tests`](../test/navigator/). The stage-direction test retains
+[`test_stage_directions.py`](../test/interview/test_stage_directions.py),
+[`test_closing.py`](../test/interview/test_closing.py),
+[`test_waiting.py`](../test/interview/test_waiting.py),
+[`test_conversation_repair.py`](../test/interview/test_conversation_repair.py),
+and the [`navigator tests`](../test/navigator/), among them
+[`test_menu.py`](../test/navigator/test_menu.py). The stage-direction test retains
 its reproduction context; the historical fallback runs have no stored benchmark
 artifact in this repository.
 
