@@ -63,6 +63,44 @@ def test_backend_network_scope_keeps_its_meaning(scope, network_first, both):
     assert "16. Out-of-network reimbursement" in rendered
 
 
+@pytest.mark.parametrize("scope", ["both_networks", "provider_network"])
+def test_the_contracts_network_is_checked_against_and_answered_from(scope):
+    rendered = prompts.instructions(
+        "verification",
+        prepare(payload(network_benefit_scope=scope, contract_network="in_network")),
+    )
+    assert "Our records show this provider is in network with this plan." in rendered
+    assert (
+        "When they say out of network, at any point in the call, check it once"
+        in rendered
+    )
+    assert "give the NPI and tax ID" in rendered
+    assert "say your records show the provider is in network with them" in rendered
+    # Only a clinic that collects one network has another to start collecting.
+    assert ("this call collects both networks" in rendered) is (
+        scope == "provider_network"
+    )
+
+
+def test_without_the_contracts_network_nothing_is_claimed():
+    rendered = prompts.instructions("verification", prepare(payload()))
+    assert "Our records show" not in rendered
+    assert "say you don't have it on file" in rendered
+
+
+def test_without_a_tax_id_the_check_asks_by_npi_alone():
+    rendered = prompts.instructions(
+        "verification", prepare(payload(contract_network="in_network", tax_id=None))
+    )
+    assert "tax ID" not in rendered
+    assert "give the NPI, say your records show" in rendered
+
+
+def test_an_unknown_contracts_network_is_rejected():
+    with pytest.raises(ValueError):
+        prepare(payload(contract_network="unknown"))
+
+
 def test_omitting_the_scope_renders_the_legacy_both_networks_script():
     rendered = prompts.instructions("verification", prepare(payload()))
     assert "1. Benefits for physical therapy" in rendered

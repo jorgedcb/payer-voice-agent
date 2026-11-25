@@ -59,6 +59,11 @@ class CallSpec(BaseModel):
     network_benefit_scope: Literal["both_networks", "provider_network"] = (
         "both_networks"
     )
+    # The provider's network on this plan as the clinic's payer contracts state it,
+    # looked up by the backend at dispatch. The agent's answer when a representative
+    # asks whether the provider is contracted, and what it checks their answer
+    # against. None: the contracts state nothing, which never means out of network.
+    contract_network: Literal["in_network", "out_of_network"] | None = None
 
     @property
     def therapy_benefit(self) -> Literal["habilitative", "rehabilitative"] | None:

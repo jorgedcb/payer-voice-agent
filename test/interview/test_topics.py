@@ -72,8 +72,9 @@ def test_every_spec_renders_distinct_topics() -> None:
     # with one topic per heading the template rendered for it.
     services = ["physical_therapy", "speech_therapy", "mental_health"]
     auths = [None, True]
-    for scope, service, dx, auth_in, auth_out, limits, mnr in product(
+    for scope, contract, service, dx, auth_in, auth_out, limits, mnr in product(
         ["both_networks", "provider_network"],
+        ["in_network", "out_of_network", None],
         services,
         ["", "F84.0"],
         auths,
@@ -83,6 +84,7 @@ def test_every_spec_renders_distinct_topics() -> None:
     ):
         spec = sample_spec(
             network_benefit_scope=scope,
+            contract_network=contract,
             service_type=service,
             dx_code=dx,
             auth_required_in_network=auth_in,
