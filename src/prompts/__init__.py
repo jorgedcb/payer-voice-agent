@@ -83,19 +83,11 @@ def call_date_today() -> date:
     return datetime.now(ZoneInfo("America/New_York")).date()
 
 
-def today_call_date(call_date: date | None = None) -> str:
-    """The call's date as spoken to the representative."""
-    return (call_date or call_date_today()).strftime("%m/%d/%Y")
-
-
-def instructions(
-    name: str, spec: CallSpec, *, call_date: date | None = None, phase: Phase = "menu"
-) -> str:
+def instructions(name: str, spec: CallSpec, *, phase: Phase = "menu") -> str:
     """Render backend fields directly; filters handle presentation, not call data."""
     # A spec field named like one of these raises here, on every call.
     return _template(name).render(
         **spec.model_dump(),
-        call_date=today_call_date(call_date),
         habilitative=spec.habilitative,
         therapy_benefit=spec.therapy_benefit,
         member_id_spelled=one_at_a_time(spec.member_id),

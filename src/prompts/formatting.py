@@ -235,6 +235,16 @@ def service_label(service_type: str) -> str:
     return _SERVICE_LABELS[service_type]
 
 
+def date_digits(day: date) -> str:
+    """2026-09-12 -> "09/12/2026", month first, as US payers write a date."""
+    return f"{day:%m/%d/%Y}"
+
+
+def date_words(day: date) -> str:
+    """2026-09-12 -> "September 12, 2026", a date as a person says it."""
+    return f"{day:%B} {day.day}, {day.year}"
+
+
 def us_date(s: str) -> str:
     """ "1990-01-23" -> "01/23/1990", the month-first order US phone menus ask for.
 
@@ -244,7 +254,7 @@ def us_date(s: str) -> str:
     is shown as sent.
     """
     try:
-        return date.fromisoformat(s).strftime("%m/%d/%Y")
+        return date_digits(date.fromisoformat(s))
     except ValueError:
         return s
 
@@ -256,7 +266,6 @@ def speak_date(s: str) -> str:
     Anything that is not an ISO date is shown as sent.
     """
     try:
-        day = date.fromisoformat(s)
+        return date_words(date.fromisoformat(s))
     except ValueError:
         return s
-    return f"{day:%B} {day.day}, {day.year}"

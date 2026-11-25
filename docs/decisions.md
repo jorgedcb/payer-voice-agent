@@ -299,7 +299,7 @@ open: some lines take the digits alone.
 **Decision:** `end_call` runs `CallReferenceTask` before the SDK hang-up. The task
 collects the representative's name and a confirmed reference, or an explicit
 statement that none is available. Code references receive preformatted speech;
-composed name/date references are read naturally.
+dated references are built in code (see below).
 
 **History:** prompt-only reference collection let the interview hang up on a
 goodbye about one turn in five, according to the original comments. Asked to
@@ -309,6 +309,49 @@ the formatted read-back avoids asking the model to derive pronunciation.
 
 **Code and coverage:** [`call_reference.py`](../src/call_reference.py),
 [`interview.py`](../src/interview.py),
+[`test_call_reference.py`](../test/interview/test_call_reference.py), and
+[`test_closing.py`](../test/interview/test_closing.py).
+
+## A dated call reference is built in code
+
+**Decision:** when a representative says the reference is their name, or a code
+they give, followed by today's date, the model calls `reference_with_todays_date`
+with at most the code. The task adds the name recorded with
+`update_representative_name` and the call's date, written the way payers log it
+("Jamie R 09/12/2026", "AB123 09/12/2026"), and gives the model the read-back:
+the name with its initial in NATO words, or the code spelled; then a rest and the
+date in words. A date the representative says is used instead of the call's only
+when it is within a day of it (their time zone, or midnight). A name correction
+rebuilds a name reference and asks for the read-back again; the same name
+recorded again does not. The tool refuses a name reference until a name is
+recorded. `update_call_reference` takes codes only, and refuses a written-out
+date or the recorded first name, pointing to the dated tool.
+
+**History:** until November 2026 the model wrote the composed string itself,
+from the call date in its prompt, and `update_call_reference` recognised it by a
+date pattern. The model both added an initial the representative never said and
+dropped one they had said, so a regex rewrote the name part to the recorded name,
+and refused a different name. The tool leaves the model nothing to compose: the
+name and the date are already held in code, so the rewriting and the date in the
+prompt went with it.
+
+**Measurements (GPT-6 Sol, 2026-11-25):** the closing file
+([`test_closing.py`](../test/interview/test_closing.py)) ran 24 times on the
+final code: 20 times with 20 tests, then 4 times with 23 after three quarantined
+tests returned to the gate. Five replays cover dated references: name and composition in
+separate turns, name, initial, date and composition in one turn, a name
+correction after the read-back, a code followed by the date, and the
+representative's own date. Each of them passed every run that reached the
+closing step. Five of the 492 test runs failed earlier, in the shared setup
+(`at_closing_task`): on entering, the closing step called
+`no_reference_available` on the last benefit answer or a statement nobody made.
+The setup alone passed 90 of 90 on this code and 90 of 90 on the code before
+this change, so whether this change moved that rate is not settled. Before the
+quarantined tests returned, the full live suite passed 165 of 165 in each of
+three runs.
+
+**Code and coverage:** [`call_reference.py`](../src/call_reference.py),
+[`call_reference.md`](../src/prompts/call_reference.md),
 [`test_call_reference.py`](../test/interview/test_call_reference.py), and
 [`test_closing.py`](../test/interview/test_closing.py).
 

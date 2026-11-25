@@ -44,6 +44,7 @@ async def test_confirm_tool_appears_only_after_a_value_is_recorded() -> None:
     assert tool_names(task) == {
         "update_representative_name",
         "update_call_reference",
+        "reference_with_todays_date",
         "no_reference_available",
     }
 
@@ -59,12 +60,65 @@ async def test_confirm_tool_appears_only_after_a_value_is_recorded() -> None:
     assert not task.done()
 
 
-async def test_composed_reference_is_read_as_words_not_spelled() -> None:
+async def test_name_and_date_reference_is_built_from_the_recorded_name() -> None:
+    task = make_task("Jamie R.", "The reference is my name and today's date.")
+    await task.update_representative_name("Jamie", "R")
+    reply = await task.reference_with_todays_date()
+    # The way payers log it: the name as given, the call's date in digits.
+    assert task.current_reference == "Jamie R 09/12/2026"
+    assert "confirm_call_reference" in tool_names(task)
+    # Read as words, the initial in NATO words: a bare letter is voiced as a
+    # word or confused with its neighbours.
+    assert (
+        "The reference I have is your name, Jamie, R as in romeo, and today's date, "
+        "September 12, 2026. Is that correct?" in reply
+    )
+
+
+async def test_code_and_date_reference_is_spelled_then_dated() -> None:
+    task = make_task("Your reference is AB123 and today's date.")
+    reply = await task.reference_with_todays_date(code=" AB123 ")
+    assert task.current_reference == "AB123 09/12/2026"
+    # The code spelled, a rest, then the date in words: not one run of digits.
+    assert (
+        "The reference I have is A as in alpha, B as in bravo, one, two, three ... "
+        "and today's date, September 12, 2026. Is that correct?" in reply
+    )
+
+
+async def test_a_date_the_representative_gives_replaces_the_call_date() -> None:
+    # Their date can differ from the dial date across a time zone or midnight.
+    task = make_task("Jamie R.", "It's my name and the date, the 11th on my end.")
+    await task.update_representative_name("Jamie", "R")
+    reply = await task.reference_with_todays_date(other_date="09/11/2026")
+    assert task.current_reference == "Jamie R 09/11/2026"
+    assert "and the date, September 11, 2026" in reply
+
+
+@pytest.mark.parametrize("other_date", ["09/14/2026", "01/01/2024", "2026-09-11"])
+async def test_a_date_not_from_around_the_call_is_refused(other_date: str) -> None:
     task = make_task("Jamie R.")
     await task.update_representative_name("Jamie", "R")
-    reply = await task.update_call_reference("Jamie R 09/12/2026")
-    assert "as in" not in reply
-    assert "month named" in reply
+    with pytest.raises(ToolError):
+        await task.reference_with_todays_date(other_date=other_date)
+    assert task.current_reference is None
+
+
+async def test_a_dated_code_cannot_carry_its_own_date() -> None:
+    task = make_task()
+    with pytest.raises(ToolError, match="added here"):
+        await task.reference_with_todays_date(code="AB123 09/12/2026")
+
+
+@pytest.mark.parametrize("reference", ["Jamie R 09/12/2026", "AB123 9/12/26", "jamie"])
+async def test_a_written_out_dated_reference_goes_to_the_dated_tool(
+    reference: str,
+) -> None:
+    task = make_task("Jamie R.")
+    await task.update_representative_name("Jamie", "R")
+    with pytest.raises(ToolError, match="reference_with_todays_date"):
+        await task.update_call_reference(reference)
+    assert task.current_reference is None
 
 
 async def test_a_code_spelled_in_groups_is_still_spelled_back() -> None:
@@ -171,27 +225,94 @@ async def test_invalid_name_is_refused(
     assert task.representative_name is None
 
 
-async def test_composed_reference_cannot_add_an_initial() -> None:
+async def test_name_and_date_reference_without_an_initial() -> None:
     task = make_task("My name is Megan.", "The reference is my name and today's date.")
     await task.update_representative_name("Megan")
-    reply = await task.update_call_reference("Megan S 09/12/2026")
+    reply = await task.reference_with_todays_date()
     assert task.current_reference == "Megan 09/12/2026"
-    assert '"Megan 09/12/2026"' in reply
+    assert "your name, Megan, and today's date" in reply
 
 
-async def test_composed_reference_keeps_the_initial_given() -> None:
+async def test_an_initial_given_after_the_read_back_joins_the_reference() -> None:
+    task = make_task(
+        "My name is Megan.",
+        "The reference is my name and today's date.",
+        "Megan S, S as in sierra.",
+    )
+    await task.update_representative_name("Megan")
+    await task.reference_with_todays_date()
+    stale = next(t for t in task.tools if t.info.name == "confirm_call_reference")
+
+    reply = await task.update_representative_name("Megan", "S")
+
+    assert task.current_reference == "Megan S 09/12/2026"
+    assert "S as in sierra" in reply
+    assert "changed" in (await stale() or "")
+
+
+async def test_the_same_name_again_keeps_the_read_back() -> None:
+    # "Yes, Jamie R" to the read-back, recorded again, is not a new reference.
     task = make_task("Jamie R.", "The reference is my name and today's date.")
     await task.update_representative_name("Jamie", "R")
-    await task.update_call_reference("Jamie 09/12/2026")
-    assert task.current_reference == "Jamie R 09/12/2026"
+    await task.reference_with_todays_date()
+    confirm = next(t for t in task.tools if t.info.name == "confirm_call_reference")
+
+    reply = await task.update_representative_name("Jamie", "R")
+
+    assert "unchanged" in reply and "Is that correct?" not in reply
+    assert await confirm() is None
+    assert result(task).reference == "Jamie R 09/12/2026"
 
 
-async def test_composed_reference_names_the_representative() -> None:
-    task = make_task("Jamie R.", "The reference is my name and today's date.")
+async def test_a_name_correction_leaves_a_dated_code_alone() -> None:
+    task = make_task("Jamie R.", "It's AB123 and today's date.", "It's Jaime.")
     await task.update_representative_name("Jamie", "R")
-    with pytest.raises(ToolError, match='"Jamie R 09/12/2026"'):
-        await task.update_call_reference("Alex 09/12/2026")
+    await task.reference_with_todays_date(code="AB123")
+    reply = await task.update_representative_name("Jaime")
+    assert task.current_reference == "AB123 09/12/2026"
+    assert "Is that correct?" not in reply
+
+
+async def test_name_and_date_reference_needs_the_name_first() -> None:
+    task = make_task("The reference is my name and today's date.")
+    with pytest.raises(ToolError, match="update_representative_name"):
+        await task.reference_with_todays_date()
     assert task.current_reference is None
+    assert "confirm_call_reference" not in tool_names(task)
+
+
+async def test_name_and_date_reference_follows_a_name_correction() -> None:
+    # The read-back is how a misheard name gets caught: the corrected name is
+    # the reference, and the read-back is asked for again.
+    task = make_task(
+        "Jamie R.",
+        "The reference is my name and today's date.",
+        "It's Jaime, J A I M E.",
+    )
+    await task.update_representative_name("Jamie", "R")
+    await task.reference_with_todays_date()
+    stale = next(t for t in task.tools if t.info.name == "confirm_call_reference")
+
+    reply = await task.update_representative_name("Jaime")
+
+    assert task.current_reference == "Jaime R 09/12/2026"
+    assert "your name, Jaime, R as in romeo" in reply and "Is that correct?" in reply
+    assert "changed" in (await stale() or "")
+    confirm = next(t for t in task.tools if t.info.name == "confirm_call_reference")
+    assert await confirm() is None
+    assert result(task) == CallReferenceResult(
+        reference="Jaime R 09/12/2026", representative_name="Jaime R"
+    )
+
+
+async def test_a_code_replaces_a_name_and_date_reference() -> None:
+    task = make_task("Jamie R.", "Actually, here's a number: AB73921.")
+    await task.update_representative_name("Jamie", "R")
+    await task.reference_with_todays_date()
+    await task.update_call_reference("AB73921")
+    # A later name record no longer changes the reference.
+    await task.update_representative_name("Jaime")
+    assert task.current_reference == "AB73921"
 
 
 async def test_declined_name_does_not_hold_the_call() -> None:
@@ -205,9 +326,8 @@ async def test_declined_name_does_not_hold_the_call() -> None:
     assert result(task) == CallReferenceResult(reference="AB73921")
 
 
-async def test_prompt_carries_the_call_date_and_disclosure() -> None:
+async def test_prompt_carries_the_disclosure() -> None:
     text = make_task().instructions or ""
-    assert "09/12/2026" in text
     assert "virtual assistant" in text
     # ElevenLabs reads markup aloud (a live call spoke "expr type prosody"), so the
     # read-back is paced with plain words, never a tag.

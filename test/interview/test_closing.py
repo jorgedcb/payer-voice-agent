@@ -4,6 +4,8 @@ end_call runs CallReferenceTask before shutting down, so the reference is
 collected by the task whatever the model does with the goodbye.
 """
 
+from datetime import timedelta
+
 import pytest
 from support.calls import (
     AETNA_ALL_TOPICS_ANSWER,
@@ -543,10 +545,9 @@ async def test_reference_composed_from_name_and_date(
     user_input = "We don't have numbers. The reference is my name and today's date."
     result = await session.run(user_input=user_input)
     show_response(user_input, result)
-    result.expect.contains_function_call(name="update_call_reference")
+    result.expect.contains_function_call(name="reference_with_todays_date")
     today = agent.call_date
-    recorded = session.current_agent.current_reference or ""
-    assert "Jamie" in recorded and str(today.year) in recorded, recorded
+    assert session.current_agent.current_reference == f"Jamie R {today:%m/%d/%Y}"
     assert not ended(result)
     # The judge has no clock of its own: name the call date, or it judges
     # against whatever date it assumes.
@@ -562,9 +563,125 @@ async def test_reference_composed_from_name_and_date(
     result = await session.run(user_input="Yes, that's right. Bye.")
     show_response("Yes, that's right. Bye.", result)
     assert ended(result)
-    assert agent.call_reference is not None and "Jamie" in (
-        agent.call_reference.reference or ""
+    assert agent.call_reference is not None
+    assert agent.call_reference.reference == f"Jamie R {today:%m/%d/%Y}"
+
+
+@pytest.mark.asyncio
+async def test_name_date_and_composition_in_one_answer(
+    session, start_assistant, judge_llm
+):
+    # The way a representative on a 2026-10-09 call gave it, all in one turn:
+    # first name, initial, the date, then that the reference is those.
+    agent = await at_closing_task(session, start_assistant)
+    today = agent.call_date
+    user_input = (
+        "Of course. Um, my first name is Dana. The first initial to my last name is "
+        f"k as in kilo. And then today's date is {today:%B} {today.day}, {today.year}. "
+        "Our call reference numbers are our names and today's date."
     )
+    result = await session.run(user_input=user_input)
+    show_response(user_input, result)
+    assert not ended(result)
+    assert session.current_agent.current_reference == f"Dana K {today:%m/%d/%Y}"
+    await result.expect.contains_message(role="assistant").judge(
+        judge_llm,
+        intent=(
+            "Reads back a reference made of the name Dana K and the date "
+            f"{today:%B} {today.day}, {today.year}, in any spoken form, and asks "
+            "whether it is correct. Does not ask for the name or a reference number."
+        ),
+    )
+
+    result = await session.run(user_input="Yep, that's it.")
+    show_response("Yep, that's it.", result)
+    assert ended(result)
+    assert agent.call_reference is not None
+    assert agent.call_reference.reference == f"Dana K {today:%m/%d/%Y}"
+
+
+@pytest.mark.asyncio
+async def test_composed_reference_follows_a_name_correction(
+    session, start_assistant, judge_llm
+):
+    agent = await at_closing_task(session, start_assistant)
+    await session.run(user_input="Jamie R.")
+    await session.run(user_input="The reference is my name and today's date.")
+    user_input = "Almost. My name is spelled J A I M E, Jaime."
+    result = await session.run(user_input=user_input)
+    show_response(user_input, result)
+    today = agent.call_date
+    assert session.current_agent.current_reference == f"Jaime R {today:%m/%d/%Y}"
+    assert not ended(result)
+    await result.expect.contains_message(role="assistant").judge(
+        judge_llm,
+        intent=(
+            "Reads back the reference again with the name Jaime R and the date "
+            f"{today:%B} {today.day}, {today.year}, in any spoken form, and asks "
+            "whether it is correct."
+        ),
+    )
+
+    result = await session.run(user_input="Yes, that's correct.")
+    show_response("Yes, that's correct.", result)
+    assert ended(result)
+    assert agent.call_reference is not None
+    assert agent.call_reference.reference == f"Jaime R {today:%m/%d/%Y}"
+    assert agent.call_reference.representative_name == "Jaime R"
+
+
+@pytest.mark.asyncio
+async def test_reference_composed_from_code_and_date(
+    session, start_assistant, judge_llm
+):
+    agent = await at_closing_task(session, start_assistant)
+    await session.run(user_input="Jamie R.")
+    user_input = "Your reference is A B one two three, and then today's date."
+    result = await session.run(user_input=user_input)
+    show_response(user_input, result)
+    today = agent.call_date
+    assert session.current_agent.current_reference == f"AB123 {today:%m/%d/%Y}"
+    assert not ended(result)
+    await result.expect.contains_message(role="assistant").judge(
+        judge_llm,
+        intent=(
+            "Reads back the code AB123 followed by the date "
+            f"{today:%B} {today.day}, {today.year}, in any spoken form, and asks "
+            "whether it is correct."
+        ),
+    )
+
+    result = await session.run(user_input="Correct.")
+    show_response("Correct.", result)
+    assert ended(result)
+    assert agent.call_reference is not None
+    assert agent.call_reference.reference == f"AB123 {today:%m/%d/%Y}"
+
+
+@pytest.mark.asyncio
+async def test_composed_reference_takes_the_representatives_date(
+    session, start_assistant, judge_llm
+):
+    # Their date can trail the dial date (New York) late in their day.
+    agent = await at_closing_task(session, start_assistant)
+    await session.run(user_input="Jamie R.")
+    await session.run(user_input="The reference is my name and today's date.")
+    today = agent.call_date
+    theirs = today - timedelta(days=1)
+    user_input = (
+        "Almost. On my end it's still "
+        f"{theirs:%B} {theirs.day}, {theirs.year}, so use that date."
+    )
+    result = await session.run(user_input=user_input)
+    show_response(user_input, result)
+    assert session.current_agent.current_reference == f"Jamie R {theirs:%m/%d/%Y}"
+    assert not ended(result)
+
+    result = await session.run(user_input="Yes, that's it.")
+    show_response("Yes, that's it.", result)
+    assert ended(result)
+    assert agent.call_reference is not None
+    assert agent.call_reference.reference == f"Jamie R {theirs:%m/%d/%Y}"
 
 
 @pytest.mark.asyncio

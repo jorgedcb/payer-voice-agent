@@ -1,7 +1,6 @@
 """The backend wire payload must reach the agents without changing its meaning."""
 
 import json
-from datetime import date
 from pathlib import Path
 
 import pytest
@@ -25,7 +24,7 @@ def prepare(data):
 async def test_backend_payload_renders_both_agents():
     spec = prepare(payload())
     nav = prompts.instructions("navigator", spec)
-    interview = prompts.instructions("verification", spec, call_date=date(2026, 9, 9))
+    interview = prompts.instructions("verification", spec)
     assert "W123456789" in nav
     assert "Patient date of birth: 01/01/1990" in nav
     assert (
@@ -33,11 +32,6 @@ async def test_backend_payload_renders_both_agents():
         in interview
     )
     assert "office and home" in interview
-    # The call date is spoken only by the reference task, when a representative
-    # says the reference is their name and the date.
-    assert "09/09/2026" not in interview
-    closing = prompts.instructions("call_reference", spec, call_date=date(2026, 9, 9))
-    assert "09/09/2026" in closing
     assert spec.member_id == "W123456789"
     assert spec.member_date_of_birth == "1990-01-01"
 
