@@ -4,7 +4,7 @@ The models under test come from the agents themselves, so production and the
 suite can't drift apart. Override them for a comparison run without editing any
 file:
 
-    LK_TEST_MODEL=google/gemma-4-31b-it uv run pytest
+    LK_TEST_MODEL=google/gemini-3.8-flash uv run pytest
     LK_NAVIGATOR_TEST_MODEL=openai/gpt-6-luna uv run pytest test/navigator/
     LK_TEST_MODEL=openai/gpt-6-luna LK_TEST_REASONING=low uv run pytest test/interview/
 

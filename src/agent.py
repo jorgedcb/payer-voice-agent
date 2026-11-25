@@ -28,7 +28,6 @@ import interview
 import navigator
 import prompts
 import report
-import topics
 from dispatch import load_sample_spec, parse_dispatch
 from navigator import NavigatorAgent
 from recording import start_recording
@@ -44,7 +43,8 @@ PRIMARY_LLM = "openai/gpt-6-sol"
 # Unset, gpt-6-sol reasons before it speaks and the first token takes over a
 # second; with none it starts about as fast as the model it replaced.
 PRIMARY_LLM_REASONING: Final = "none"
-FALLBACK_LLM = "google/gemma-4-31b-it"
+# One fallback for the whole call: docs/decisions.md#model-selection.
+FALLBACK_LLM = navigator.NAVIGATOR_FALLBACK_LLM
 
 
 def primary_llm(
@@ -104,8 +104,7 @@ async def entrypoint(ctx: JobContext):
 
     # Validate both phases before dialing, not minutes later at the handoff.
     prompts.instructions(navigator.PROMPT, spec)
-    # The interview's topics too: its end_call gate reads them from the prompt.
-    topics.benefit_topics(prompts.instructions(interview.PROMPT, spec))
+    prompts.instructions(interview.PROMPT, spec)
     prompts.instructions(call_reference.PROMPT, spec)
 
     # Set up before the session starts, so the pipeline's spans are routed. The room
@@ -126,7 +125,7 @@ async def entrypoint(ctx: JobContext):
 
     # Configure the voice pipeline with STT, LLM, TTS, and VAD providers
     session: AgentSession = AgentSession(
-        # LLM with fallback: GPT-6 Sol primary, Gemma backup.
+        # LLM with fallback: GPT-6 Sol primary, Gemini 3.8 Flash backup.
         # Fallback fires on provider errors only -- timeouts, 4xx/5xx, mid-stream
         # drops -- never on output quality, so the primary handles every call that
         # doesn't error.

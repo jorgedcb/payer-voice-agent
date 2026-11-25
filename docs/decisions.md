@@ -38,10 +38,9 @@ selection by participant kind rather than assuming the same model fits both.
 
 ## Model selection
 
-**Decision:** the interview uses GPT-6 Sol with reasoning effort `none`, with Gemma
-as its provider-error fallback; the navigator uses GPT-6 Sol with reasoning effort
-`none` too, with Gemini 3.8 Flash as its fallback. Fallback does not evaluate response
-quality.
+**Decision:** both the interview and the navigator use GPT-6 Sol with reasoning
+effort `none`, with Gemini 3.8 Flash as their provider-error fallback. Fallback
+does not evaluate response quality.
 
 **History:** on a seeded stage-direction failure context, Gemma spoke stage
 directions in 6 of 10 runs and GPT-4.1 in 0 of 10. This motivated the interview
@@ -95,6 +94,25 @@ handed off on its lone "Okay?".
 
 The navigator then went to effort `none`, to match the interview, without
 re-running those tests on it; at `none` only the pickup turn above is measured.
+
+More reasoning does not stand in for those interview rules. With them taken out
+of the prompts, Sol failed the tests behind them at `none`, `minimal` and `low`
+alike (10 runs each): a goodbye before the reference went unasked 9 to 10 times,
+the diagnosis question after a limit was skipped 7 to 10 times, and a declined
+reimbursement basis was asked again 4 to 9 times; with them, every effort passed
+8 to 10 of 10. The rules state what the call needs, which no model can infer.
+Time to first token on an interview turn (median of 15 interleaved): `none` 785
+ms, `minimal` 789 ms, `low` 1,104 ms.
+
+The interview's fallback moved from Gemma to Gemini 3.8 Flash, the navigator's,
+when the closing gate was removed (see Benefit topics are settled by the prompt),
+since that gate was also what sent Gemma to its topic check. On the seeded
+stage-direction context Gemini spoke none in 10 runs, Gemma 2 in 10. On the
+early-closing replays both kept the call open 10 of 10, and both closed over the
+garbled out-of-pocket answer 10 of 10, with the gate or without it. Gemini is
+slower: its first token took 1.46 s (median of 15, p90 2.8 s) against Gemma's
+0.68 s, and setting its reasoning effort did not change that. It only answers
+while OpenAI's endpoint is failing.
 
 **Code and coverage:** [`agent.py`](../src/agent.py),
 [`navigator.py`](../src/navigator.py),
@@ -265,38 +283,54 @@ the formatted read-back avoids asking the model to derive pronunciation.
 [`test_call_reference.py`](../test/interview/test_call_reference.py), and
 [`test_closing.py`](../test/interview/test_closing.py).
 
-## Benefit topics are checked before closing
+## Benefit topics are settled by the prompt
 
-**Decision:** the closing question comes from `check_topics`, a tool that asks the
-model to mark every benefit topic as answered, unavailable (the representative
-cannot or will not give it), skipped or open. A mark counts only with its evidence:
-the words from the line, or the fact on file or skip condition that applies. The
-topics are the `###` headings of the rendered prompt, read again before dialing, so
-the tool and the prompt list the same ones. `end_call` with reason
-`verification_complete` is refused until a check finds nothing open. An ending in
-the same turn as that check is held once and sent to the closing question; only
-once, because the model may have asked and heard it before checking.
-`call_cannot_continue` (a refusal, a failed transfer) ends without a check, but not
-in the same turn a finished verification was refused. The reason is logged with the
-topics the last check left open, and stamped on the report's closing.
+**Decision:** the interview's prompt lists the benefit topics as numbered headings
+and tells the model to check them against the conversation before the closing
+question. Nothing in code checks them: `end_call` starts the closing step when the
+model calls it, with a reason (`verification_complete` or `call_cannot_continue`)
+that is logged and stamped on the report.
 
-**History:** with a prompt rule to check the topics against the conversation
-before closing, GPT-4.1 still asked about other limitations or exclusions with
-topics never asked in 5 of 20 runs of the `after-out-of-state` replay, and a
-2026-11-19 Aetna call closed that way in production, leaving the out-of-pocket
-questions and the out-of-network reimbursement unasked. Tracking topics in code
-after every answer also fixed it, but cost a model call per answer; the check
-costs one model step when the model believes it is done, about four seconds for
-that turn. Marks without the representative's words still settled unasked
-topics in about one run in ten of the `after-visit-limits` replay. Gemma, the
-fallback, rarely calls the check on its own; the refused unchecked ending sends it
-there, and it reached the reference step in every traced run, though it re-asked an
-answered topic in 2 of 4 runs of the last-topic replay.
+**History:** from November 20 to 25, 2026, a `check_topics` tool had the model mark
+every topic, with evidence, before closing, and `end_call` refused a finished
+verification until a check found nothing open. It was added because GPT-4.1,
+with the prompt rule above, asked the closing question with topics never asked
+in 5 of 20 runs of the `after-out-of-state` replay, and a 2026-11-19 Aetna call
+closed that way in production.
 
-**Code and coverage:** [`topics.py`](../src/topics.py),
+GPT-6 Sol at effort `none` did not close early on any of the four early-closing
+replays (`after-visit-limits`, `after-out-of-state`, and the hard-maximum and
+visits-used turns of the 2026-11-19 call): 15 of 15 each with the gate, with the
+check offered but not enforced, and with no check on the earlier prompt, and
+again at `minimal`. On the turn after the last topic, the check took 3.4 s
+(median of 15) before the model wrote the question in a second call; without it
+the first word came after 0.7 s.
+
+The comparison also showed a flaw in the all-topics replay: it asked about the
+medical-necessity review out of network only, on a call that collects both
+networks, and took "No need for medical review" as settling both. Without the
+check, Sol asked for the in-network review every time; the check marked it
+answered. An exchange asking it in network is now added to the replay and marked.
+With an answer that covers both networks, both versions asked the closing question
+15 of 15, and both closed over the garbled out-of-pocket answer in 2 of 15 runs:
+the check had taken the garbled words as the answer.
+
+Without the check and with Gemini 3.8 Flash as the fallback, the live suite passed
+161 of 161 in each of three runs.
+
+On the replay as committed, the agent asked the garbled out-of-pocket answer again
+in 13 of 13 runs, and never called `end_call` in the same reply as the closing
+question (10 of 10; the test now asserts it). Nothing in code holds such an
+ending any more, as the gate did once per check.
+
+`verification_complete` is now the model's own judgment that every topic is
+settled; the report carries it as given. A reader of the report that treats it
+as proof every topic was asked takes that on trust.
+
+**Code and coverage:** [`verification.md`](../src/prompts/verification.md),
 [`interview.py`](../src/interview.py),
-[`test_topics.py`](../test/interview/test_topics.py), and
-[`test_closing.py`](../test/interview/test_closing.py).
+[`test_closing.py`](../test/interview/test_closing.py), and
+[`test_benefit_topics.py`](../test/interview/test_benefit_topics.py).
 
 ## Traces are grouped by call ID
 

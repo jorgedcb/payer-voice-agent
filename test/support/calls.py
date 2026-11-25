@@ -1338,10 +1338,11 @@ AETNA_OUT_OF_STATE_ANSWER = (
 # covered every topic before closing: the provider is out of network, the
 # representative answered the medical-necessity question and then declined to
 # give a reimbursement basis. The agent asked about other limitations or
-# exclusions next, which is the turn the closing should still take. Two
+# exclusions next, which is the turn the closing should still take. Three
 # exchanges are added, each marked, so every topic is settled: the real call
-# never asked whether there is a copay out of network, or whether the in-network
-# copay counts toward the out-of-pocket maximum. The representative's answer to
+# never asked whether there is a copay out of network, whether the in-network
+# copay counts toward the out-of-pocket maximum, or whether a medical-necessity
+# review is required in network. The representative's answer to
 # whether the out-of-pocket maximum applies reached the agent garbled; the call
 # carries a clear answer, and a test replays the garbled one as said.
 AETNA_ALL_TOPICS_OOP_AS_SAID = "Over these were out of network."
@@ -1743,6 +1744,10 @@ AETNA_ALL_TOPICS_CALL = [
     ("assistant", "Is a medical-necessity review required for physical"),
     ("user", "Medical review"),
     ("user", "No need for medical review."),
+    # Added: the real call asked about the review for out of network only, on a
+    # call that collects both networks.
+    ("assistant", "And in network, is a medical-necessity review required?"),
+    ("user", "No, not in network either."),
     (
         "assistant",
         (
@@ -1944,14 +1949,8 @@ AETNA_EARLY_CLOSING_CALL = [
 AETNA_EARLY_CLOSING_ANSWER = "Alright. Hard marks."
 
 
-def all_settled(agent) -> tuple[str, dict[str, dict[str, str]]]:
-    """A check_topics call, for `replay`, that finds every topic answered."""
-    mark = {"status": "answered", "evidence": "Stated by the representative."}
-    return ("check_topics", {topic.key: mark for topic in agent.topics})
-
-
 def closing_started(session, result) -> bool:
-    """Whether end_call got past its gate: the reference task runs, or the call ended."""
+    """Whether end_call started the closing: the reference task runs, or the call ended."""
     from call_reference import CallReferenceTask
 
     return isinstance(session.current_agent, CallReferenceTask) or any(
@@ -1977,8 +1976,6 @@ async def replay(under_test, history) -> None:
     becomes a message. Anything else is one of the agent's own tool calls,
     with the empty result every navigator tool returns: `send_dtmf_events`
     takes the keys as a string, the other tools their text or None.
-    `check_topics` takes its marks and runs on the agent, so the agent's state
-    and the result the model saw agree.
     """
     chat_ctx = ChatContext()
     for n, (kind, payload) in enumerate(history):
@@ -1986,13 +1983,7 @@ async def replay(under_test, history) -> None:
             chat_ctx.add_message(role=kind, content=payload)
             continue
         call_id = f"call_{n}"
-        output = ""
-        if kind == "check_topics":
-            arguments = json.dumps(payload)
-            # The agent counts the representative's turns before the check.
-            await under_test.update_chat_ctx(chat_ctx)
-            output = under_test.check_topics(payload)
-        elif kind == "send_dtmf_events":
+        if kind == "send_dtmf_events":
             arguments = json.dumps({"events": list(payload)})
         elif payload is not None:
             arguments = json.dumps({"text": payload})
@@ -2003,7 +1994,7 @@ async def replay(under_test, history) -> None:
         )
         chat_ctx.insert(
             llm.FunctionCallOutput(
-                call_id=call_id, name=kind, output=output, is_error=False
+                call_id=call_id, name=kind, output="", is_error=False
             )
         )
     await under_test.update_chat_ctx(chat_ctx)

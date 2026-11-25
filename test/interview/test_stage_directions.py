@@ -10,8 +10,9 @@ first one, lifted from the Langfuse trace. Replaying the turns from scratch does
 not reproduce the bug, so the test seeds that state and runs only the turn that
 broke: the representative saying nothing more than "Okay.".
 
-Failure rate on that context: 6/10 on google/gemma-4-31b-it, 0/10 on
-openai/gpt-4.1, 0/10 on openai/gpt-6-sol with reasoning effort none.
+Failure rate on that context: 6/10 on google/gemma-4-31b-it (2/10 in a later
+run), 0/10 on openai/gpt-4.1, 0/10 on openai/gpt-6-sol with reasoning effort
+none, 0/10 on google/gemini-3.8-flash.
 Re-check with LK_TEST_MODEL.
 """
 

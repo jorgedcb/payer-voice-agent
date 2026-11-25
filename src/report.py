@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 ANSWERED_AT_KEY = "agent_answered_at"
 # The closing the interview confirmed on the line: the representative's name,
 # the call reference (or the statement that none exists). Stamped by
-# InterviewAgent.end_call; the backend can trust it over a transcript read.
+# InterviewAgent.end_call. Its reason is the model's own: verification_complete
+# when it judged every benefit topic settled, which nothing in code checks.
 CLOSING_KEY = "agent_closing"
 # Events whose content the report already holds: the running usage total
 # (its final value is the report's `usage`) and copies of chat history items.

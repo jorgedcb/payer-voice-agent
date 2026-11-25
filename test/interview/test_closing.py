@@ -1,8 +1,7 @@
 """Closing regressions from real calls, with synthetic reference values.
 
 end_call runs CallReferenceTask before shutting down, so the reference is
-collected by the task whatever the model does with the goodbye. A finished
-verification ends only after check_topics found every benefit topic settled.
+collected by the task whatever the model does with the goodbye.
 """
 
 import pytest
@@ -22,7 +21,6 @@ from support.calls import (
     AETNA_VISIT_LIMITS_ANSWER,
     AETNA_VISIT_LIMITS_CALL,
     AETNA_VISIT_LIMITS_PATIENT,
-    all_settled,
     assert_yields_turn,
     called,
     closing_started,
@@ -233,7 +231,6 @@ async def test_closing_waits_for_open_benefit_topics(
     result = await session.run(user_input=last_answer)
     show_response(last_answer, result)
 
-    # A refused end_call is the gate working; only a closing that starts fails.
     assert not closing_started(session, result), (
         "Benefit topics are still open; the call must not start closing."
     )
@@ -265,6 +262,9 @@ async def test_closing_question_follows_the_last_benefit_topic(
     result = await session.run(user_input=AETNA_ALL_TOPICS_ANSWER)
     show_response(AETNA_ALL_TOPICS_ANSWER, result)
 
+    # The closing question needs its answer: ending in the same reply would start
+    # the reference step before the representative names a limitation.
+    assert not called(result, "end_call")
     await result.expect.contains_message(role="assistant").judge(
         judge_llm,
         intent=(
@@ -369,13 +369,30 @@ def ended(result) -> bool:
     )
 
 
-async def at_closing_task(session, start_assistant, earlier=(), **overrides):
-    """Run to the point where the last interview answer made end_call start the task.
+# The all-topics call, every topic settled, from the representative's greeting on
+# and with their name left out of it: each closing-step test gives the name at the
+# closing, and the phone menu before the greeting read out a reference of its own.
+_GREETING = next(
+    n
+    for n, (kind, text) in enumerate(AETNA_ALL_TOPICS_CALL)
+    if kind == "user" and "My name is Ray." in text
+)
+SETTLED_CALL = [
+    *(
+        (kind, text.replace(" My name is Ray.", "").replace("Hi Ray, this", "Hi, this"))
+        if isinstance(text, str)
+        else (kind, text)
+        for kind, text in AETNA_ALL_TOPICS_CALL[_GREETING:]
+    ),
+    ("user", AETNA_ALL_TOPICS_ANSWER),
+]
 
-    `earlier` is conversation to replay before the passed topic check.
-    """
-    agent = await start_assistant(**overrides)
-    await replay(agent, [*earlier, all_settled(agent), *CLOSING])
+
+async def at_closing_task(session, start_assistant):
+    """Run to the point where the last interview answer made end_call start the task."""
+    agent = await start_assistant(**(AETNA_PT_CLINIC | AETNA_ALL_TOPICS_PATIENT))
+    assert not any("Ray" in str(text) for _, text in SETTLED_CALL)
+    await replay(agent, [*SETTLED_CALL, *CLOSING])
     result = await session.run(user_input=LAST_ANSWER)
     show_response(LAST_ANSWER, result)
     result.expect.contains_function_call(name="end_call")
@@ -408,22 +425,12 @@ async def test_first_name_alone_is_not_given_the_callers_initial(
 ):
     # From a real call: the representative gave only a first name, the same as
     # the caller's, and was recorded with the initial from the caller's own
-    # introduction earlier on the line.
-    introduced = [
-        ("user", "Thank you for calling. Who am I speaking with?"),
-        ("assistant", "Hi, this is Megan, last initial S as in sierra."),
-        ("user", "Thanks, Megan. What can I help you with?"),
-    ]
-    await at_closing_task(
-        session,
-        start_assistant,
-        introduced,
-        caller_first_name="Megan",
-        caller_last_initial="S",
-    )
-    result = await session.run(user_input="My name is Megan.")
-    show_response("My name is Megan.", result)
-    assert session.current_agent.representative_name == "Megan"
+    # introduction earlier on the line. The caller here introduced herself as
+    # Annie, last initial S.
+    await at_closing_task(session, start_assistant)
+    result = await session.run(user_input="My name is Annie.")
+    show_response("My name is Annie.", result)
+    assert session.current_agent.representative_name == "Annie"
     assert not ended(result)
     await result.expect.contains_message(role="assistant").judge(
         judge_llm,
