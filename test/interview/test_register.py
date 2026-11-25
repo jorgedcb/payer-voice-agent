@@ -84,11 +84,12 @@ PT_VERIFIED = [
 async def test_no_diagnosis_code_is_said_the_way_a_caller_says_it(
     session, start_assistant, llm, question
 ) -> None:
-    # From a PT call Jose reviewed in Slack: "The verification concerns general
-    # benefits. I do not have a specific diagnosis code for this call." was
-    # followed by "am I speaking to live human representative here?". His own
-    # wording: "I don't have diagnosis code for this one, will be just general
-    # physical therapy under the CPT that I gave you."
+    # From a physical therapy call reviewed by a teammate who makes these calls
+    # by hand: "The verification concerns general benefits. I do not have a
+    # specific diagnosis code for this call." was followed by "am I speaking to
+    # live human representative here?". The teammate's own wording: "I don't
+    # have diagnosis code for this one, will be just general physical therapy
+    # under the CPT that I gave you."
     agent = await start_assistant(
         caller_first_name="Annie",
         caller_last_initial="S",

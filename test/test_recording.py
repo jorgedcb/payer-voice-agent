@@ -54,9 +54,7 @@ async def test_audio_request_and_shutdown(recording_ctx):
     assert ctx.api.egress.stop_egress.call_args.args[0].egress_id == "EG_test"
 
 
-async def test_shutdown_leaves_upload_completion_to_the_backend(
-    recording_ctx, monkeypatch
-):
+async def test_shutdown_leaves_upload_completion_to_the_backend(recording_ctx):
     ctx = recording_ctx
     ctx.api.egress.stop_egress.return_value = api.EgressInfo(
         status=api.EgressStatus.EGRESS_ENDING
@@ -64,7 +62,6 @@ async def test_shutdown_leaves_upload_completion_to_the_backend(
     ctx.api.egress.list_egress.return_value = api.ListEgressResponse(
         items=[api.EgressInfo(status=api.EgressStatus.EGRESS_COMPLETE)]
     )
-    monkeypatch.setattr("recording.asyncio.sleep", AsyncMock())
     await start_recording(ctx)
     await ctx.callbacks[0]()
     ctx.api.egress.stop_egress.assert_awaited_once()

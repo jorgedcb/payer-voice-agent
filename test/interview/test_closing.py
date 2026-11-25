@@ -503,7 +503,7 @@ async def test_reference_composed_from_name_and_date(session, start_assistant, l
     show_response(user_input, result)
     result.expect.contains_function_call(name="update_call_reference")
     recorded = session.current_agent.current_reference or ""
-    assert "Jamie" in recorded and "2026" in recorded, recorded
+    assert "Jamie" in recorded and str(agent.call_date.year) in recorded, recorded
     assert not ended(result)
     await result.expect.contains_message(role="assistant").judge(
         llm,

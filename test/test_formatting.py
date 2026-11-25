@@ -47,7 +47,7 @@ def test_a_date_that_is_not_iso_is_spoken_as_sent(raw: str) -> None:
     ["+12025550123", "12025550123", "2025550123", "(202) 555-0123", "202-555-0123"],
 )
 def test_us_phone_numbers_read_in_three_groups(raw: str) -> None:
-    # The format Jorge measured as clearest on ElevenLabs Flash; see speak_phone.
+    # The format measured as clearest on ElevenLabs Flash; see speak_phone.
     assert (
         speak_phone(raw)
         == "two, zero, two ... five, five, five ... zero, one, two, three"
@@ -73,7 +73,7 @@ def test_nato_spell_reads_every_letter_as_a_letter() -> None:
 
 
 def test_npi_reads_in_three_groups_with_commas() -> None:
-    # The format Jorge measured as clearest on ElevenLabs Flash; see speak_npi.
+    # The format measured as clearest on ElevenLabs Flash; see speak_npi.
     assert (
         speak_npi("1234567893")
         == "one, two, three ... four, five, six ... seven, eight, nine, three"

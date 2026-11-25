@@ -1,7 +1,6 @@
 """The two-agent shape: navigator first, interview only after a human answers.
 
-These tests pin the mechanics of the handoff, not menu judgment. They should keep
-passing unchanged once the navigator grows real IVR logic.
+These tests pin the mechanics of the handoff, not menu judgment.
 """
 
 from support.calls import called, handoff_opening, show_response, turn_settings

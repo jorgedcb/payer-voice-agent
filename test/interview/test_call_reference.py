@@ -1,7 +1,7 @@
 """The call reference is collected by a task that end_call runs before shutdown.
 
 Offline: the task's tool mechanics and end_call's ordering. The live closing
-scenarios are in test_interview_closing.py.
+scenarios are in test_closing.py.
 """
 
 from datetime import date

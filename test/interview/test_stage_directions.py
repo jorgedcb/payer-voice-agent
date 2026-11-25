@@ -1,6 +1,6 @@
 """Bug: the agent spoke stage directions aloud.
 
-On call ttfa-20260905-000505 the agent emitted
+On a 2026-09-05 call the agent emitted
 "(Wait for the representative to proceed or ask for identity verification)"
 three times. Everything the agent emits is synthesized, so a parenthetical
 describing an action is read out to the representative.

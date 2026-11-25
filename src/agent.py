@@ -94,7 +94,7 @@ async def entrypoint(ctx: JobContext):
 
     # Set up before the session starts, so the pipeline's spans are routed. The room
     # name doubles as the Langfuse session id, grouping every span from this call.
-    # Production rooms are the call id (vc-<uuid>); the Colab notebook dials ttfa-*.
+    # Production rooms are the call id (vc-<uuid>).
     trace_provider = setup_langfuse(session_id=ctx.room.name)
     if trace_provider is not None:
 

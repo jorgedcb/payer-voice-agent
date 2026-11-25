@@ -89,7 +89,7 @@ the old comment's approximately 75 ms figure is not an end-to-end measurement
 from this repository. The direct plugin replaced the LiveKit Inference route
 after ElevenLabs left that route, according to the original implementation note.
 
-Jorge selected the default voice by listening. Calls and the playground did not
+The default voice was selected by listening. Calls and the playground did not
 sound alike with settings unset: the plugin sent an empty `voice_settings`
 object, while the playground used stored voice settings. Explicit settings make
 the comparison reproducible. Stability was raised from 0.55 to 0.7 after short
